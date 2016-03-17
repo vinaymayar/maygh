@@ -1,13 +1,13 @@
 FINAL PROJECT PROPOSAL
 ----------------------
 
-## Members
+### Members
 
 * Anying Li (anyingl)
 * Lara Timbo Araujo (larat)
 * Vinay Mayar (vmayar)
 
-## Problem
+### Problem
 
 A large percentage of content loaded by websites is static content--images,
 videos, scripts, etc.  It's expensive for most websites to distribute this
@@ -16,7 +16,7 @@ content.  A cheaper alternative is to allow clients to load static content
 from each other.  We wish to do this without placing any burden on the
 client.
 
-## Plan of Attack
+### Plan of Attack
 
 Maygh provides a solution to this problem by making clients cache static
 resources.  Clients load static resources from each other via a central
