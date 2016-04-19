@@ -1,0 +1,16 @@
+{
+  "name": "example-site",
+  "version": "1.0.0",
+  "description": "A site that serves static resources.  Used to test our implementation of Maygh.",
+  "main": "server.js",
+  "scripts": {
+    "start": "cp $MAYGH_HOME/src/client/client.js $MAYGH_HOME/example-site/public/js/maygh-client.js && cd $MAYGH_HOME/src/coordinator && npm install && npm start & cd $MAYGH_HOME/example-site && node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "vmayar",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.13.4",
+    "path": "^0.12.7"
+  }
+}
