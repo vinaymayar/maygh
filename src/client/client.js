@@ -3,6 +3,11 @@
  *
  * @author: ?
  */
+var socket = io('http://localhost')
+
+socket.on('connect', function () { // TIP: you can avoid listening on `connect` and listen on events directly too!
+  console.log("hehehehe i conntected")
+});
 
 /**
  * Connects to a coordinator.  The coordinator object
