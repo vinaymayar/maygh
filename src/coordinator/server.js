@@ -1,26 +1,30 @@
-/**
- * Node server for Coordinator.
- * TODO: everything
- *
-**/
+var Coordinator = require('./Coordinator.js').Coordinator
 
+var app = require('http').createServer(handler)
+var io = require('socket.io')(app);
+var fs = require('fs');
+var COORDINATOR_PORT = 8000;
 
-//Lets require/import the HTTP module
-var http = require('http');
+// Starts a new coordinator
+var coordinator = new Coordinator()
 
-//Lets define a port we want to listen to
-const PORT=8000; 
+app.listen(COORDINATOR_PORT);
 
-//We need a function which handles requests and send response
-function handleRequest(request, response){
-    response.end('Path Hit: ' + request.url);
+function handler (req, res) {
+  res.end('Path Hit: ' + req.url);
 }
 
-//Create a server
-var server = http.createServer(handleRequest);
-
-//Lets start our server
-server.listen(PORT, function(){
-    //Callback triggered when server is successfully listening. Hurray!
-    console.log("Server listening on: http://localhost:%s", PORT);
+io.on('connection', function (socket) {
+  socket.on('initiate', function (data) {
+    /*
+    Data: IP, etc.
+    Generates a pid for that client, and then creates
+    a room.
+    */
+    var pid = socket.id
+    coordinator.addClient(pid, data)
+  });
+  socket.on('load', function (data) {
+    console.log(data);
+  });
 });
