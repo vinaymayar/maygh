@@ -4,9 +4,6 @@
  * @author: ?
  */
 
-
-var Buffer = require('buffer/').Buffer  // note: the trailing slash is important!
-
 var socket = io.connect('http://localhost:8000')
 
 socket.on('connect', function () { // TIP: you can avoid listening on `connect` and listen on events directly too!
@@ -97,17 +94,33 @@ function loadFromSrc(contentHash, src, domElt) {
   var xmlHttp = new XMLHttpRequest()
   // TODO: change to asynchronous
   xmlHttp.open( "GET", src, true ); // false for synchronous request
-  xmlHttp.onreadystatechange = function (){
+  xmlHttp.responseType = 'arraybuffer';
+
+  xmlHttp.onreadystatechange = function (e) {
     console.log("Callback was called 1")
     if (xmlHttp.readyState == 4 && xmlHttp.status == 200){
       console.log("Callback was called")
-      var txt = xmlHttp.responseText;
+      // var txt = xmlHttp.responseText;
 
-      var b64_txt = encodeBase64(txt);
+      var arr = new Uint8Array(this.response);
+      // Convert the int array to a binary string
+      // We have to use apply() as we are converting an *array*
+      // and String.fromCharCode() takes one or more single values, not
+      // an array.
+      var raw = '';
+      var i,j,subArray,chunk = 5000;
+      for (i=0,j=arr.length; i<j; i+=chunk) {
+        subArray = arr.subarray(i,i+chunk);
+        raw += String.fromCharCode.apply(null, subArray);
+      }
+
+      // This works!!!
+      var b64 = btoa(raw);
+
       var mime = getMimeType(src);
-      var datauri = 'data:' + mime + ';base64,' + b64_txt;
+      var datauri = 'data:' + mime + ';base64,' + b64;
       localStorage.setItem(contentHash, datauri);
-      domElt.src = ""
+      domElt.src = datauri
       console.log(domElt.src)
     }
   };
