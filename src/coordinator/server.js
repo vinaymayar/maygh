@@ -24,7 +24,9 @@ io.on('connection', function (socket) {
     var pid = socket.id
     coordinator.addClient(pid, data)
   });
-  socket.on('load', function (data) {
-    console.log(data);
+  socket.on('lookup', function (data, callback) {
+    console.log("Server received lookup message")
+    pid = coordinator.lookup(data['content_hash'])
+    callback({'pid': pid})
   });
 });
