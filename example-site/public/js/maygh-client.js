@@ -5,6 +5,7 @@
  */
 
 
+var Buffer = require('buffer/').Buffer  // note: the trailing slash is important!
 
 var socket = io.connect('http://localhost:8000')
 
