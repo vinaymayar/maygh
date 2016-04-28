@@ -21,5 +21,3 @@ Coordinator design:
 * Other responsibilities: 
 	* Sends heartbeats to all rooms
 		* If no response in timeout: delete corresponding entries in maps
-
-    // "start": "cp $MAYGH_HOME/src/client/client.js $MAYGH_HOME/example-site/public/js/maygh-client.js && cd $MAYGH_HOME/src/coordinator && npm install && npm start & cd $MAYGH_HOME/example-site && node server.js",
