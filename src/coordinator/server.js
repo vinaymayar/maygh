@@ -25,6 +25,8 @@ function handler (req, res) {
 //    'initiate': Sent on connection from client. Should add that client's
 //                information to the coordinator state
 //    'lookup': Looks up a client that has the specified content.
+//    'update': Updates the information about a client
+//    'connect': Connects two clients via WebRTC
 io.on('connection', function (socket) {
   // data: {}
   socket.on('initiate', function (data) {
@@ -36,5 +38,18 @@ io.on('connection', function (socket) {
     console.log("Server received lookup message")
     pid = coordinator.lookup(data['content_hash'])
     callback({'pid': pid})
+  });
+
+  socket.on('update', function (data) {
+    var contentHash = data['contentHash']
+    var pid = socket.id
+    coordinator.addContentHashToClient(contentHash, pid)
+  });
+
+  socket.on('connect', function (data, callback) {
+    var pid1 = socket.id
+    var pid2 = data['pid']
+
+    callback({})
   });
 });

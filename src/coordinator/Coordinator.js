@@ -5,11 +5,11 @@
  */
 
 function Coordinator() {
-  // map from content hashes to lists of client 
+  // map from content hashes to lists of client
   // pids that have that content
   this.contentToClientMap = {};
-  // inverse map from above. 
-  // map from client pids to lists of 
+  // inverse map from above.
+  // map from client pids to lists of
   // content hashes stored by that client
   this.clientToContentMap = {};
   // map from client pids to dictionary of information
@@ -18,7 +18,7 @@ function Coordinator() {
   this.clientsInfoMap = {};
 }
 
-// Looks up and returns a client that has the 
+// Looks up and returns a client that has the
 // specified content.
 // Returns null if no client has that content
 Coordinator.prototype.lookup = function(contentHash) {
@@ -34,5 +34,20 @@ Coordinator.prototype.addClient = function(clientPID, clientInfo) {
   // TODO: check if client already exists
   this.clientsInfoMap[clientPID] = clientInfo
 };
+
+Coordinator.prototype.addContentHashToClient = function (contentHash, client) {
+  // adds client to content hash map
+  if (this.contentToClientMap[contentHash] == null) {
+    this.contentToClientMap[contentHash] = []
+  }
+  this.contentToClientMap[contentHash].push(client)
+
+  // adds content hash to client map
+  if (this.clientToContentMap[client] == null) {
+    this.clientToContentMap[client] = []
+  }
+  this.clientToContentMap[client].push(contentHash)
+}
+
 
 exports.Coordinator = Coordinator

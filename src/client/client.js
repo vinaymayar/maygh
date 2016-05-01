@@ -43,11 +43,14 @@ Maygh.prototype.load = function(contentHash, id, src) {
 
   // otherwise, look up the content w/ coordinator and then save to local storage
 	socket.emit('lookup', {'contentHash': contentHash}, function(data) {
-    console.log("my data is in da client: " + data);
+    console.log("my data is in the client: " + data);
     var pid = data['pid']
     domElt = document.getElementById(id)
     if (pid != null) {
-      loadFromPeer(contentHash, pid, domElt)
+      // asks server to connect to another client through WebRTC
+      socket.emit('connect', {'pid': pid}, function(data) {
+        loadFromPeer(contentHash, pid, domElt)
+      })
     } else {
       loadFromSrc(contentHash, src, domElt)
     }
