@@ -46,10 +46,19 @@ io.on('connection', function (socket) {
     coordinator.addContentHashToClient(contentHash, pid)
   });
 
-  socket.on('connect', function (data, callback) {
-    var pid1 = socket.id
-    var pid2 = data['pid']
+  socket.on('sendOffer', function (data) {
+    var pid = data['pid']
+    var description = data['description']
 
-    callback({})
-  });
+    if (io.sockets.connected[pid])
+        io.sockets.connected[pid].emit('receiveOffer', {'pid': socket.id, 'description': description})
+  }
+
+  socket.on('sendAnswer', function (data) {
+    var pid = data['pid']
+    var description = data['description']
+
+    if (io.sockets.connected[pid])
+        io.sockets.connected[pid].emit('receiveAnswer', {'pid': socket.id, 'description': description})
+  }
 });

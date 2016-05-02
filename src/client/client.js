@@ -14,6 +14,16 @@ socket.on('connect', function () {
   console.log("Client connected")
 });
 
+socket.on('receiveOffer', function (data) {
+  // create webrtc connection
+  var remotePID = data['remotePID']
+  var webrtc = new WebRTC(socket, remotePID)
+  webrtc.createRemoteConnection()
+})
+
+socket.on('receiveAnswer', function (data) {
+})
+
 maygh = new Maygh()
 
 function Maygh() {
@@ -47,10 +57,13 @@ Maygh.prototype.load = function(contentHash, id, src) {
     var pid = data['pid']
     domElt = document.getElementById(id)
     if (pid != null) {
+      // create an offer
+
       // asks server to connect to another client through WebRTC
-      socket.emit('connect', {'pid': pid}, function(data) {
-        loadFromPeer(contentHash, pid, domElt)
+      socket.emit('connect', {'pid': pid, 'description': description}, function(data) {
+
       })
+      loadFromPeer(contentHash, pid, domElt)
     } else {
       loadFromSrc(contentHash, src, domElt)
     }
