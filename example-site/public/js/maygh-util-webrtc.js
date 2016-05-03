@@ -1,4 +1,4 @@
-function createLocalPeerConnection() {
+function createLocalPeerConnection(remotePID) {
     console.log("createLocalConnection")
     var servers = null
     var pcConstraints = null
@@ -7,6 +7,7 @@ function createLocalPeerConnection() {
 
     dataChannel = pc.createDataChannel('dataChannel')
     dataChannel.onopen = function () {
+        console.log("dataChannel opened")
         // send a message telling the peer to send us a content hash
         dataChannel.send("Hi, pls hear me.")
     }
@@ -14,7 +15,9 @@ function createLocalPeerConnection() {
         console.log("Data Channel closed.")
     }
 
-    pc.onicecandidate = gotIceCandidate
+    pc.onicecandidate = function(event) {
+        gotIceCandidate(pc, remotePID, event)
+    }
 
     return pc
 }
@@ -26,7 +29,7 @@ function createRemotePeerConnection() {
     var servers = null
     var pcConstraints = null
 
-    pc = new RTCPeerConnection(servers, pcConstraint);
+    pc = new webkitRTCPeerConnection(servers, pcConstraints);
 
     pc.ondatachannel = remoteChannelCallback
 
@@ -37,6 +40,7 @@ function createRemotePeerConnection() {
 }
 // Set the callbacks for the datachannel in the remote connection
 function remoteChannelCallback(event) {
+    console.log("remoteChannelCallback called")
     var dataChannel = event.channel
     dataChannel.onmessage = onRemoteMessageCallback
     dataChannel.onopen =  function (){
@@ -53,6 +57,10 @@ function onRemoteMessageCallback(event) {
     console.log(event.data)
 }
 
-function gotIceCandidate() {
-    console.log("im empty like your soul")
+function gotIceCandidate(pc, remotePID, event) {
+    // console.log("got ice candidate")
+    // if (event.candidate) {
+    //     maygh.socket.emit('sendIceCandidate',
+    //         {'toPeer': remotePID, 'candidate': event.candidate})
+    // }
 }

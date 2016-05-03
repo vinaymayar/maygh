@@ -28,26 +28,30 @@ function handler (req, res) {
 //    'update': Updates the information about a client
 //    'connect': Connects two clients via WebRTC
 io.on('connection', function (socket) {
-  // data: {}
+
   socket.on('initiate', function (data) {
+    console.log("client connected " + socket.id)
     var pid = socket.id
     coordinator.addClient(pid, data)
   });
-  // data: { 'content_hash': XXXXXX }
+
   socket.on('lookup', function (data, callback) {
     console.log("Server received lookup message")
     var res = {}
 
-    res['pid'] = coordinator.lookup(data['content_hash'])
+    res['pid'] = coordinator.lookup(data['contentHash'])
     res['success'] = (res['pid'] != null)
 
     callback(res)
   });
 
   socket.on('update', function (data) {
+    console.log("Server received update message")
+
     var contentHash = data['contentHash']
     var pid = socket.id
     coordinator.addContentHashToClient(contentHash, pid)
+    console.log(coordinator.contentToClientMap)
   });
 
   socket.on('sendOffer', function (data, callback) {
@@ -58,11 +62,24 @@ io.on('connection', function (socket) {
       io.sockets.connected[toPeer].emit('receiveOffer', {'description': description},
         function (res) {
           res['success'] = true
+          console.log(res)
           callback(res)
         });
     else
       callback({'success': false})
   });
+
+  // socket.on('sendIceCandidate', function (data, callback) {
+  //   var candidate = data['candidate']
+  //   var toPeer = data['toPeer']
+
+  //   if (io.sockets.connected[toPeer])
+  //     io.sockets.connected[toPeer].emit('receiveIceCandidate', {'description': description},
+  //       function (res) {
+  //         res['success'] = true
+  //         callback(res)
+  //       });
+  // })
 
   // receive a description from p1, callback p1
       // forward description to p2

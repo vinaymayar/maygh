@@ -29,9 +29,11 @@ Maygh.prototype.connect = function() {
 
   this.socket.on('receiveOffer',
     function (data, callback) {
+      console.log("client received offer")
       var description = data['description']
+      console.log(description)
       pc = createRemotePeerConnection() // should set all callbacks
-      pc.setRemoteDescription(description)
+      pc.setRemoteDescription(new RTCSessionDescription(description))
 
       pc.createAnswer(
         function(description) {
@@ -82,7 +84,6 @@ function loadFromPeer(contentHash, pid, domElt) {
 function lookupSuccessCallback(data, contentHash, src, domElt) {
   console.log("lookupSuccessCallback called");
   console.log("contentHash is " + contentHash)
-  console.log("src is " + src)
 
   var pid = data['pid']
   var success = data['success']
@@ -92,7 +93,7 @@ function lookupSuccessCallback(data, contentHash, src, domElt) {
     console.log("found peer " + pid)
 
     // create peerconnection and set up some callbacks
-    pc = createLocalPeerConnection()
+    pc = createLocalPeerConnection(pid)
 
     // create an offer from that peer connection
     pc.createOffer(
@@ -102,6 +103,7 @@ function lookupSuccessCallback(data, contentHash, src, domElt) {
       createOfferFailCallback)
 
   } else {
+    console.log("loaded contents from source")
     loadFromSrc(contentHash, src, domElt)
 
     // sends a update message telling the server, we have the element
@@ -138,6 +140,7 @@ function loadFromSrc(contentHash, src, domElt) {
 
 // Success callback from offer creation:
 function createOfferSuccessCallback(pc, toPeer, description){
+  console.log('createOfferSuccessCallback called')
   pc.setLocalDescription(description)
   var data = {'description': description, 'toPeer': toPeer}
   maygh.socket.emit('sendOffer', data,
@@ -150,16 +153,17 @@ function createOfferFailCallback(error) {
   console.log("createOfferFailCallback: " + error)
 }
 
-function gotAnswerCallback(res) {
+function gotAnswerCallback(pc, res) {
+  console.log("gotAnswerCallback called")
   var remoteDescription = res['description']
   var success = res['success']
+  console.log(res)
   if (success)
-    pc.setRemoteDescription(remoteDescription)
+    pc.setRemoteDescription(new RTCSessionDescription(remoteDescription))
   else {
     console.log("gotAnswerCallback error")
   }
 
-  // pc sends some message so pc2 starts transmitting data
 }
 
 function createAnswerFailCallback(error) {
