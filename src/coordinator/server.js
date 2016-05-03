@@ -36,8 +36,12 @@ io.on('connection', function (socket) {
   // data: { 'content_hash': XXXXXX }
   socket.on('lookup', function (data, callback) {
     console.log("Server received lookup message")
-    pid = coordinator.lookup(data['content_hash'])
-    callback({'pid': pid})
+    var res = {}
+
+    res['pid'] = coordinator.lookup(data['content_hash'])
+    res['success'] = (res['pid'] != null)
+
+    callback(res)
   });
 
   socket.on('update', function (data) {
@@ -51,16 +55,14 @@ io.on('connection', function (socket) {
     var description = data['description']
 
     if (io.sockets.connected[toPeer])
-      io.sockets.connected[toPeer].emit('receiveOffer', {},
+      io.sockets.connected[toPeer].emit('receiveOffer', {'description': description},
         function (res) {
           res['success'] = true
           callback(res)
         });
-    else {
+    else
       callback({'success': false})
-    }
-
-  })
+  });
 
   // receive a description from p1, callback p1
       // forward description to p2

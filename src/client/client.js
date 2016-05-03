@@ -64,9 +64,10 @@ Maygh.prototype.load = function(contentHash, id, src) {
   // }
 
   // otherwise, look up the content w/ coordinator and then save to local storage
-	this.socket.emit('lookup', {'contentHash': contentHash}, function(data) {
-    lookupSuccessCallback(data, contentHash, src, domElt)
-  })
+	this.socket.emit('lookup', {'contentHash': contentHash},
+    function(data) {
+      lookupSuccessCallback(data, contentHash, src, domElt)
+    });
 };
 
 /**
@@ -80,26 +81,33 @@ function loadFromPeer(contentHash, pid, domElt) {
 
 function lookupSuccessCallback(data, contentHash, src, domElt) {
   console.log("lookupSuccessCallback called");
-  var pid = data['pid']
+  console.log("contentHash is " + contentHash)
+  console.log("src is " + src)
 
-  if (pid != null) {
+  var pid = data['pid']
+  var success = data['success']
+  console.log("success: " + success)
+
+  if (success) {
     console.log("found peer " + pid)
-    // create peerconnection and set up a bunch of stuff
-    pc = createPeerConnection()
+
+    // create peerconnection and set up some callbacks
+    pc = createLocalPeerConnection()
+
     // create an offer from that peer connection
     pc.createOffer(
       function(description) {
-        createOfferSuccessCallback(pc, description)
+        createOfferSuccessCallback(pc, pid, description)
       },
       createOfferFailCallback)
 
   } else {
     loadFromSrc(contentHash, src, domElt)
-  }
 
-  // sends a update message telling the server, we have the element
-  // in out local storage
-  maygh.socket.emit('update', {'contentHash': contentHash})
+    // sends a update message telling the server, we have the element
+    // in out local storage
+    maygh.socket.emit('update', {'contentHash': contentHash})
+  }
 }
 /**
  * Loads content from origin and displays it in the appropriate dom element
@@ -129,19 +137,34 @@ function loadFromSrc(contentHash, src, domElt) {
 }
 
 // Success callback from offer creation:
-function createOfferSuccessCallback(pc, description){
-  maygh.socket.emit('sendOffer',
-    function (answer) {
-      gotAnswerCallback(pc, answer)
+function createOfferSuccessCallback(pc, toPeer, description){
+  pc.setLocalDescription(description)
+  var data = {'description': description, 'toPeer': toPeer}
+  maygh.socket.emit('sendOffer', data,
+    function (res) {
+      gotAnswerCallback(pc, res)
     });
 }
 
-function gotAnswerCallback(answer) {
-  var remoteDescription = answer['remoteDescription']
-  pc.setRemoteDescription(remoteDescription)
+function createOfferFailCallback(error) {
+  console.log("createOfferFailCallback: " + error)
+}
+
+function gotAnswerCallback(res) {
+  var remoteDescription = res['description']
+  var success = res['success']
+  if (success)
+    pc.setRemoteDescription(remoteDescription)
+  else {
+    console.log("gotAnswerCallback error")
+  }
+
   // pc sends some message so pc2 starts transmitting data
 }
 
+function createAnswerFailCallback(error) {
+  console.log('createAnswerFailCallback: ' + error)
+}
 
 var maygh = new Maygh();
 maygh.connect()

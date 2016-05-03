@@ -4,7 +4,7 @@
   "description": "A site that serves static resources.  Used to test our implementation of Maygh.",
   "main": "server.js",
   "scripts": {
-    "start": "cp $MAYGH_HOME/src/client/client.js $MAYGH_HOME/example-site/public/js/maygh-client.js && cp $MAYGH_HOME/src/client/util.js $MAYGH_HOME/example-site/public/js/maygh-util.js && cd $MAYGH_HOME/src/coordinator && npm install && npm start & cd $MAYGH_HOME/example-site && node server.js",
+    "start": "cp $MAYGH_HOME/src/client/client.js $MAYGH_HOME/example-site/public/js/maygh-client.js && cp $MAYGH_HOME/src/client/util.js $MAYGH_HOME/example-site/public/js/maygh-util.js && cp $MAYGH_HOME/src/client/util-webrtc.js $MAYGH_HOME/example-site/public/js/maygh-util-webrtc.js && cd $MAYGH_HOME/src/coordinator && npm install && npm start & cd $MAYGH_HOME/example-site && node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "vmayar",
