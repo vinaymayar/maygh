@@ -7,35 +7,47 @@
 // Upon start connect via socket with the coordinator
 // and send an initiate event, so the coordinator is
 // aware of us.
-var socket = io.connect('http://localhost:8000')
+//
 
-socket.on('connect', function () {
-  socket.emit('initiate', {})
-  console.log("Client connected")
-});
-
-socket.on('receiveOffer', function (data) {
-  // create webrtc connection
-  var remotePID = data['remotePID']
-  var webrtc = new WebRTC(socket, remotePID)
-  webrtc.createRemoteConnection()
-})
-
-socket.on('receiveAnswer', function (data) {
-})
-
-maygh = new Maygh()
 
 function Maygh() {
-
+  // socket connecting client to coordinator
+  this.socket = null
 }
+
 /**
  * Connects to a coordinator.  The coordinator object
  * passed as an argument is [TODO].
  */
-Maygh.prototype.connect = function(coordinator) {
-  //TODO: Connect to the coordinator
-}
+Maygh.prototype.connect = function() {
+  this.socket = io.connect('http://localhost:8000')
+
+  this.socket.on('connect', function () {
+    maygh.socket.emit('initiate', {})
+    console.log("Client connected")
+  });
+
+  this.socket.on('receiveOffer',
+    function (data, callback) {
+      var description = data['description']
+      pc = createRemotePeerConnection() // should set all callbacks
+      pc.setRemoteDescription(description)
+
+      pc.createAnswer(
+        function(description) {
+          pc.setLocalDescription(description)
+          callback({'description': description})
+        },
+        createAnswerFailCallback
+      );
+
+    });
+
+  // needs to be listening for offers
+  // create a remote peerconnection
+  // set up all callbacks
+  // call server call back with it's answer
+};
 
 /**
  * Given a content hash and a src load content in to
@@ -46,33 +58,16 @@ Maygh.prototype.load = function(contentHash, id, src) {
   var domElt = document.getElementById(id);
 
   // check if item is already in localstorage
-  if (localStorage.getItem(contentHash) != null) {
-    domElt.src = localStorage.getItem(contentHash);
-    return
-  }
+  // if (localStorage.getItem(contentHash) != null) {
+  //   domElt.src = localStorage.getItem(contentHash);
+  //   return
+  // }
 
   // otherwise, look up the content w/ coordinator and then save to local storage
-	socket.emit('lookup', {'contentHash': contentHash}, function(data) {
-    console.log("my data is in the client: " + data);
-    var pid = data['pid']
-    domElt = document.getElementById(id)
-    if (pid != null) {
-      // create an offer
-
-      // asks server to connect to another client through WebRTC
-      socket.emit('connect', {'pid': pid, 'description': description}, function(data) {
-
-      })
-      loadFromPeer(contentHash, pid, domElt)
-    } else {
-      loadFromSrc(contentHash, src, domElt)
-    }
-
-    // sends a update message telling the server, we have the element
-    // in out local storage
-    socket.emit('update', {'contentHash': contentHash})
+	this.socket.emit('lookup', {'contentHash': contentHash}, function(data) {
+    lookupSuccessCallback(data, contentHash, src, domElt)
   })
-}
+};
 
 /**
  * Loads content with the given id from a peer
@@ -83,6 +78,29 @@ function loadFromPeer(contentHash, pid, domElt) {
   //TODO: Verify the hash
 }
 
+function lookupSuccessCallback(data, contentHash, src, domElt) {
+  console.log("lookupSuccessCallback called");
+  var pid = data['pid']
+
+  if (pid != null) {
+    console.log("found peer " + pid)
+    // create peerconnection and set up a bunch of stuff
+    pc = createPeerConnection()
+    // create an offer from that peer connection
+    pc.createOffer(
+      function(description) {
+        createOfferSuccessCallback(pc, description)
+      },
+      createOfferFailCallback)
+
+  } else {
+    loadFromSrc(contentHash, src, domElt)
+  }
+
+  // sends a update message telling the server, we have the element
+  // in out local storage
+  maygh.socket.emit('update', {'contentHash': contentHash})
+}
 /**
  * Loads content from origin and displays it in the appropriate dom element
 */
@@ -109,3 +127,21 @@ function loadFromSrc(contentHash, src, domElt) {
 
   xmlHttp.send(null)
 }
+
+// Success callback from offer creation:
+function createOfferSuccessCallback(pc, description){
+  maygh.socket.emit('sendOffer',
+    function (answer) {
+      gotAnswerCallback(pc, answer)
+    });
+}
+
+function gotAnswerCallback(answer) {
+  var remoteDescription = answer['remoteDescription']
+  pc.setRemoteDescription(remoteDescription)
+  // pc sends some message so pc2 starts transmitting data
+}
+
+
+var maygh = new Maygh();
+maygh.connect()

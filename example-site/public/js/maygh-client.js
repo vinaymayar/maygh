@@ -7,25 +7,26 @@
 // Upon start connect via socket with the coordinator
 // and send an initiate event, so the coordinator is
 // aware of us.
-var socket = io.connect('http://localhost:8000')
+//
 
-socket.on('connect', function () {
-  socket.emit('initiate', {})
-  console.log("Client connected")
-});
-
-maygh = new Maygh()
 
 function Maygh() {
-
+  // socket connecting client to coordinator
+  this.socket = null
 }
+
 /**
  * Connects to a coordinator.  The coordinator object
  * passed as an argument is [TODO].
  */
-Maygh.prototype.connect = function(coordinator) {
-  //TODO: Connect to the coordinator
-}
+Maygh.prototype.connect = function() {
+  this.socket = io.connect('http://localhost:8000')
+
+  this.socket.on('connect', function() {
+    maygh.socket.emit('initiate', {})
+    console.log("Client connected")
+  });
+};
 
 /**
  * Given a content hash and a src load content in to
@@ -36,27 +37,16 @@ Maygh.prototype.load = function(contentHash, id, src) {
   var domElt = document.getElementById(id);
 
   // check if item is already in localstorage
-  if (localStorage.getItem(contentHash) != null) {
-    domElt.src = localStorage.getItem(contentHash);
-    return
-  }
+  // if (localStorage.getItem(contentHash) != null) {
+  //   domElt.src = localStorage.getItem(contentHash);
+  //   return
+  // }
 
   // otherwise, look up the content w/ coordinator and then save to local storage
-	socket.emit('lookup', {'contentHash': contentHash}, function(data) {
-    console.log("my data is in da client: " + data);
-    var pid = data['pid']
-    domElt = document.getElementById(id)
-    if (pid != null) {
-      loadFromPeer(contentHash, pid, domElt)
-    } else {
-      loadFromSrc(contentHash, src, domElt)
-    }
-
-    // sends a update message telling the server, we have the element
-    // in out local storage
-    socket.emit('update', {'contentHash': contentHash})
+	this.socket.emit('lookup', {'contentHash': contentHash}, function(data) {
+    lookupSuccessCallback(data, contentHash, src, domElt)
   })
-}
+};
 
 /**
  * Loads content with the given id from a peer
@@ -67,6 +57,20 @@ function loadFromPeer(contentHash, pid, domElt) {
   //TODO: Verify the hash
 }
 
+function lookupSuccessCallback(data, contentHash, src, domElt) {
+  console.log("lookupSuccessCallback called");
+  var pid = data['pid']
+
+  if (pid != null) {
+    console.log("found peer " + pid)
+  } else {
+    loadFromSrc(contentHash, src, domElt)
+  }
+
+  // sends a update message telling the server, we have the element
+  // in out local storage
+  maygh.socket.emit('update', {'contentHash': contentHash})
+}
 /**
  * Loads content from origin and displays it in the appropriate dom element
 */
@@ -93,3 +97,6 @@ function loadFromSrc(contentHash, src, domElt) {
 
   xmlHttp.send(null)
 }
+
+var maygh = new Maygh();
+maygh.connect()

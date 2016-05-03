@@ -1,11 +1,5 @@
-function WebRTC(socket, pid) {
-    this.socket = socket
-    this.pid = pid
-    this.pc = null
-    this.dataChannel = null
-}
-
-WebRTC.prototype.createLocalConnection = function() {
+function createLocalConnection = function() {
+    console.log("createLocalConnection")
     var servers = null
     var pcConstraints = null
 
@@ -20,7 +14,9 @@ WebRTC.prototype.createLocalConnection = function() {
 }
 
 
-WebRTC.prototype.createRemoteConnection = function(description) {
+function createRemoteConnection = function(description) {
+    console.log("createRemoteConnection")
+
     var servers = null
     var pcConstraints = null
 
@@ -36,43 +32,43 @@ WebRTC.prototype.createRemoteConnection = function(description) {
 
 }
 
-WebRTC.prototype.remoteChannelCallback = function(event) {
+function remoteChannelCallback = function(event) {
     this.dataChannel = event.channel
     this.dataChannel.onmessage = onRemoteMessageCallback
     this.dataChannel.onopen = onRemoteChannelStateChange
     this.dataChannel.onclose = onRemoteChannelStateChange
 }
 
-WebRTC.prototype.onRemoteMessageCallback = function(event) {
+function onRemoteMessageCallback = function(event) {
     // this is interesting, but not yet
     console.log(event.data)
 }
 
-WebRTC.prototype.onRemoteChannelStateChange = function() {
+function onRemoteChannelStateChange = function() {
     var readyState = this.dataChannel.readyState
     if (readyState === 'open') {
         // set some stuff, don't send things though
     }
 }
 
-WebRTC.prototype.onLocalChannelStateChange = function() {
+function onLocalChannelStateChange = function() {
     var readyState = this.dataChannel.readyState
     if (readyState === 'open') {
         // send data
     }
 }
 
-
-WebRTC.prototype.sendOfferDescriptionToServer = function (description) {
+function sendOfferDescriptionToServer = function (description) {
     this.pc.setLocalDescription(description)
-    this.socket.emit('sendOffer', {'description': description, 'pid': this.pid})
+    // this.socket.emit('sendOffer', {'description': description, 'pid': this.pid})
+    this.createOfferSuccessSend(description, this.pid)
 }
 
-WebRTC.prototype.sendAnswerDescriptionToServer = function (description) {
+function sendAnswerDescriptionToServer = function (description) {
     this.pc.setLocalDescription(description)
     this.socket.emit('sendAnswer', {'description': description, 'pid': this.pid})
 }
 
-WebRTC.prototype.gotIceCandidate = function () {
+function gotIceCandidate = function () {
 
 }

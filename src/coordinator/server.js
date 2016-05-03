@@ -46,19 +46,24 @@ io.on('connection', function (socket) {
     coordinator.addContentHashToClient(contentHash, pid)
   });
 
-  socket.on('sendOffer', function (data) {
-    var pid = data['pid']
+  socket.on('sendOffer', function (data, callback) {
+    var toPeer = data['toPeer']
     var description = data['description']
 
-    if (io.sockets.connected[pid])
-        io.sockets.connected[pid].emit('receiveOffer', {'pid': socket.id, 'description': description})
-  }
+    if (io.sockets.connected[toPeer])
+      io.sockets.connected[toPeer].emit('receiveOffer', {},
+        function (res) {
+          res['success'] = true
+          callback(res)
+        });
+    else {
+      callback({'success': false})
+    }
 
-  socket.on('sendAnswer', function (data) {
-    var pid = data['pid']
-    var description = data['description']
+  })
 
-    if (io.sockets.connected[pid])
-        io.sockets.connected[pid].emit('receiveAnswer', {'pid': socket.id, 'description': description})
-  }
+  // receive a description from p1, callback p1
+      // forward description to p2
+      // callback: calls p1's callback with p2 answer
+      // function(answer) { callbackp1(answer) }
 });
