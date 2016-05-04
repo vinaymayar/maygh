@@ -57,10 +57,11 @@ io.on('connection', function (socket) {
   socket.on('sendOffer', function (data, callback) {
     var toPeer = data['toPeer']
     var description = data['description']
+    var connectionID = data['connectionID']
 
     if (io.sockets.connected[toPeer])
       io.sockets.connected[toPeer].emit('receiveOffer',
-        {'description': description, 'fromPeer': socket.id },
+        {'description': description, 'fromPeer': socket.id, 'connectionID': connectionID },
         function (res) {
           res['success'] = true
           console.log(res)
@@ -73,9 +74,11 @@ io.on('connection', function (socket) {
   socket.on('sendIceCandidate', function (data, callback) {
     var candidate = data['candidate']
     var toPeer = data['toPeer']
+    var clientListenerName = data['clientIceCandidateEventListenerName']
+    console.log("sendingIceCandidate in the server with clientListenerName " + clientListenerName)
 
     if (io.sockets.connected[toPeer])
-      io.sockets.connected[toPeer].emit('receiveIceCandidate', {'candidate': candidate})
+      io.sockets.connected[toPeer].emit(clientListenerName, {'candidate': candidate})
   })
 
   // receive a description from p1, callback p1

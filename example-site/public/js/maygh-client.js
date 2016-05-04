@@ -14,7 +14,6 @@ function Maygh() {
   // socket connecting client to coordinator
   this.socket = null
 }
-
 /**
  * Connects to a coordinator.  The coordinator object
  * passed as an argument is [TODO].
@@ -32,8 +31,11 @@ Maygh.prototype.connect = function() {
       console.log("client received offer")
       var description = data['description']
       var fromPeer = data['fromPeer']
+      var connectionID = data['connectionID']
+
       console.log(description)
-      pc = createRemotePeerConnection(fromPeer) // should set all callbacks
+      pc = createRemotePeerConnection(fromPeer, connectionID) // should set all callbacks
+      setUpReceiveIceCandidateEventListener(pc, connectionID, 'remote')
       pc.setRemoteDescription(new RTCSessionDescription(description))
 
       pc.createAnswer(
@@ -43,13 +45,6 @@ Maygh.prototype.connect = function() {
         },
         createAnswerFailCallback
       );
-
-      maygh.socket.on('receiveIceCandidate', function (data) {
-        var candidate = data['candidate']
-        pc.addIceCandidate(new RTCIceCandidate(candidate))
-        console.log("remote client got myself an ice candidateeeeeeeeeeee")
-        console.log(pc)
-      });
 
     });
 
@@ -99,23 +94,18 @@ function lookupSuccessCallback(data, contentHash, src, domElt) {
 
   if (success) {
     console.log("found peer " + pid)
+    var connectionID = generateUID(contentHash)
 
     // create peerconnection and set up some callbacks
-    pc = createLocalPeerConnection(pid)
+    pc = createLocalPeerConnection(pid, connectionID)
+    setUpReceiveIceCandidateEventListener(pc, connectionID, 'local')
 
     // create an offer from that peer connection
     pc.createOffer(
       function(description) {
-        createOfferSuccessCallback(pc, pid, description)
+        createOfferSuccessCallback(pc, pid, connectionID, description)
       },
       createOfferFailCallback)
-
-    maygh.socket.on('receiveIceCandidate', function (data) {
-        var candidate = data['candidate']
-        pc.addIceCandidate(new RTCIceCandidate(candidate))
-        console.log("remote client got myself an ice candidateeeeeeeeeeee")
-        console.log(pc)
-      });
 
   } else {
     console.log("loaded contents from source")
@@ -153,11 +143,22 @@ function loadFromSrc(contentHash, src, domElt) {
   xmlHttp.send(null)
 }
 
+function setUpReceiveIceCandidateEventListener(pc, uid, peerType) {
+  var eventListenerName = 'receiveIceCandidate-' + peerType + '-' + uid;
+  console.log('eventListenerName in client ' + eventListenerName)
+  maygh.socket.on(eventListenerName, function (data) {
+    var candidate = data['candidate']
+    pc.addIceCandidate(new RTCIceCandidate(candidate))
+    console.log("client got myself an ice candidateeeeeeeeeeee from eventListenerName " + eventListenerName)
+    console.log(pc)
+  });
+}
+
 // Success callback from offer creation:
-function createOfferSuccessCallback(pc, toPeer, description){
+function createOfferSuccessCallback(pc, toPeer, connectionID, description){
   console.log('createOfferSuccessCallback called')
   pc.setLocalDescription(description)
-  var data = {'description': description, 'toPeer': toPeer}
+  var data = {'description': description, 'toPeer': toPeer, 'connectionID': connectionID}
   maygh.socket.emit('sendOffer', data,
     function (res) {
       gotAnswerCallback(pc, res)
@@ -187,3 +188,4 @@ function createAnswerFailCallback(error) {
 
 var maygh = new Maygh();
 maygh.connect()
+

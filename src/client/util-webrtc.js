@@ -1,4 +1,4 @@
-function createLocalPeerConnection(remotePID) {
+function createLocalPeerConnection(remotePID, connectionID) {
     console.log("createLocalConnection")
     var servers = null
     var pcConstraints = null
@@ -16,14 +16,14 @@ function createLocalPeerConnection(remotePID) {
     }
 
     pc.onicecandidate = function(event) {
-        gotIceCandidate(pc, remotePID, event)
+        gotIceCandidate(pc, remotePID, connectionID, 'local', event)
     }
 
     return pc
 }
 
 
-function createRemotePeerConnection(remotePID) {
+function createRemotePeerConnection(localPID, connectionID) {
     console.log("createRemoteConnection")
 
     var servers = null
@@ -34,7 +34,7 @@ function createRemotePeerConnection(remotePID) {
     pc.ondatachannel = remoteChannelCallback
 
     pc.onicecandidate = function(event) {
-        gotIceCandidate(pc, remotePID, event)
+        gotIceCandidate(pc, localPID, connectionID, 'remote', event)
     }
 
     return pc
@@ -59,10 +59,22 @@ function onRemoteMessageCallback(event) {
     console.log(event.data)
 }
 
-function gotIceCandidate(pc, remotePID, event) {
+function gotIceCandidate(pc, remotePID, connectionID, peerType, event) {
     console.log("got ice candidate")
+    var eventListenerName = 'receiveIceCandidate-' + getOtherPeerType(peerType) + '-' + connectionID;
     if (event.candidate) {
         maygh.socket.emit('sendIceCandidate',
-            {'toPeer': remotePID, 'candidate': event.candidate})
+            {
+                'toPeer': remotePID, 
+                'candidate': event.candidate,
+                'clientIceCandidateEventListenerName': eventListenerName
+            });
     }
+}
+
+function getOtherPeerType(peerType) {
+    if (peerType === 'local') {
+        return 'remote'
+    }
+    return 'local'
 }

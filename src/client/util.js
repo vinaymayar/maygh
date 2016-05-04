@@ -30,3 +30,11 @@ function getMimeType(filename) {
   }
   return type;
 }
+
+/**
+ * Timestamp + contentHash = UID
+ */
+function generateUID(contentHash) {
+  var timestamp = new Date().getTime().toString()
+  return timestamp + contentHash
+}
