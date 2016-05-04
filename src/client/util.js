@@ -38,3 +38,13 @@ function generateUID(contentHash) {
   var timestamp = new Date().getTime().toString()
   return timestamp + contentHash
 }
+
+/**
+ * Returns 'remote' if peerType is 'local', and 'local' otherwise.
+ */
+function getOtherPeerType(peerType) {
+    if (peerType === 'local') {
+        return 'remote'
+    }
+    return 'local'
+}

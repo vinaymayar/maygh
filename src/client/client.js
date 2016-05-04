@@ -43,7 +43,7 @@ Maygh.prototype.connect = function() {
           pc.setLocalDescription(description)
           callback({'description': description})
         },
-        createAnswerFailCallback
+        createAnswerError
       );
 
     });
@@ -103,9 +103,9 @@ function lookupSuccessCallback(data, contentHash, src, domElt) {
     // create an offer from that peer connection
     pc.createOffer(
       function(description) {
-        createOfferSuccessCallback(pc, pid, connectionID, description)
+        sendOfferToPeer(pc, pid, connectionID, description)
       },
-      createOfferFailCallback)
+      createOfferError)
 
   } else {
     console.log("loaded contents from source")
@@ -154,37 +154,6 @@ function setUpReceiveIceCandidateEventListener(pc, uid, peerType) {
   });
 }
 
-// Success callback from offer creation:
-function createOfferSuccessCallback(pc, toPeer, connectionID, description){
-  console.log('createOfferSuccessCallback called')
-  pc.setLocalDescription(description)
-  var data = {'description': description, 'toPeer': toPeer, 'connectionID': connectionID}
-  maygh.socket.emit('sendOffer', data,
-    function (res) {
-      gotAnswerCallback(pc, res)
-    });
-}
-
-function createOfferFailCallback(error) {
-  console.log("createOfferFailCallback: " + error)
-}
-
-function gotAnswerCallback(pc, res) {
-  console.log("gotAnswerCallback called")
-  var remoteDescription = res['description']
-  var success = res['success']
-  console.log(res)
-  if (success)
-    pc.setRemoteDescription(new RTCSessionDescription(remoteDescription))
-  else {
-    console.log("gotAnswerCallback error")
-  }
-
-}
-
-function createAnswerFailCallback(error) {
-  console.log('createAnswerFailCallback: ' + error)
-}
 
 var maygh = new Maygh();
 maygh.connect()
