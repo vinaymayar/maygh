@@ -52,7 +52,7 @@ function receiveOfferFromPeer(data, callback) {
       pc.setLocalDescription(description)
       callback({'description': description})
     },
-    createAnswerFailCallback
+    createAnswerError
   );
 }
 

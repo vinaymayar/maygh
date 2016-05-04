@@ -44,7 +44,7 @@ function createRemotePeerConnection(localPID, connectionID) {
     pc.ondatachannel = setRemoteChannelCallbacks
 
     pc.onicecandidate = function(event) {
-        gotIceCandidate(pc, localPID, connectionID, 'remote', event)
+        sendIceCandidateToPeer(pc, localPID, connectionID, 'remote', event)
     }
 
     return pc
@@ -53,8 +53,8 @@ function createRemotePeerConnection(localPID, connectionID) {
 /**
  * Set the callbacks for the datachannel in the remote connection
  */
-function setRemoteChannelCallback(event) {s
-    console.log("setRemoteChannelCallback called")s
+function setRemoteChannelCallbacks(event) {
+    console.log("setRemoteChannelCallbacks called")
 
     var dataChannel = event.channel
     dataChannel.onmessage = onRemoteMessageCallback
