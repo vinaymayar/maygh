@@ -21,38 +21,40 @@ function Maygh() {
 Maygh.prototype.connect = function() {
   this.socket = io.connect('http://localhost:8000')
 
+  // on connection to a coordinator, immediately send an 'initiate' event
   this.socket.on('connect', function () {
     maygh.socket.emit('initiate', {})
     console.log("Client connected")
   });
 
-  this.socket.on('receiveOffer',
-    function (data, callback) {
-      console.log("client received offer")
-      var description = data['description']
-      var fromPeer = data['fromPeer']
-      var connectionID = data['connectionID']
-
-      console.log(description)
-      pc = createRemotePeerConnection(fromPeer, connectionID) // should set all callbacks
-      setUpReceiveIceCandidateEventListener(pc, connectionID, 'remote')
-      pc.setRemoteDescription(new RTCSessionDescription(description))
-
-      pc.createAnswer(
-        function(description) {
-          pc.setLocalDescription(description)
-          callback({'description': description})
-        },
-        createAnswerError
-      );
-
-    });
+  this.socket.on('receiveOffer', receiveOfferFromPeer);
 
   // needs to be listening for offers
   // create a remote peerconnection
   // set up all callbacks
   // call server call back with it's answer
 };
+
+function receiveOfferFromPeer(data, callback) {
+  console.log("client received offer")
+  var description = data['description']
+  var fromPeer = data['fromPeer']
+  var connectionID = data['connectionID'] // the uniquely identifying connection id
+
+  console.log(description)
+  pc = createRemotePeerConnection(fromPeer, connectionID) // also sets up all the datachannel, onicecandidate callbacks
+  
+  setUpReceiveIceCandidateEventListener(pc, connectionID, 'remote')
+  pc.setRemoteDescription(new RTCSessionDescription(description))
+
+  pc.createAnswer(
+    function(description) {
+      pc.setLocalDescription(description)
+      callback({'description': description})
+    },
+    createAnswerFailCallback
+  );
+}
 
 /**
  * Given a content hash and a src load content in to
@@ -71,20 +73,16 @@ Maygh.prototype.load = function(contentHash, id, src) {
   // otherwise, look up the content w/ coordinator and then save to local storage
 	this.socket.emit('lookup', {'contentHash': contentHash},
     function(data) {
-      lookupSuccessCallback(data, contentHash, src, domElt)
+      loadAndDisplayContent(data, contentHash, src, domElt)
     });
 };
 
 /**
  * Loads content with the given id from a peer
- * and displays it in the appropriate dom element
+ * and displays it in the appropriate dom element.
+ * If no such peer exists, loads the content from source.
  */
-function loadFromPeer(contentHash, pid, domElt) {
-  //TODO: Load the content from a peer
-  //TODO: Verify the hash
-}
-
-function lookupSuccessCallback(data, contentHash, src, domElt) {
+function loadAndDisplayContent(data, contentHash, src, domElt) {
   console.log("lookupSuccessCallback called");
   console.log("contentHash is " + contentHash)
 
@@ -94,10 +92,14 @@ function lookupSuccessCallback(data, contentHash, src, domElt) {
 
   if (success) {
     console.log("found peer " + pid)
+    // a uniquely identifying sting for a connection
+    // used for listening only to specific receiveIceCandidate events
     var connectionID = generateUID(contentHash)
 
     // create peerconnection and set up some callbacks
     pc = createLocalPeerConnection(pid, connectionID)
+
+    // sets up the event listener for ice candidate events
     setUpReceiveIceCandidateEventListener(pc, connectionID, 'local')
 
     // create an offer from that peer connection
@@ -116,6 +118,7 @@ function lookupSuccessCallback(data, contentHash, src, domElt) {
     maygh.socket.emit('update', {'contentHash': contentHash})
   }
 }
+
 /**
  * Loads content from origin and displays it in the appropriate dom element
 */
@@ -143,11 +146,17 @@ function loadFromSrc(contentHash, src, domElt) {
   xmlHttp.send(null)
 }
 
+/**
+ * Creates the socket event listener for receiving ice candidate events for a particular
+ * connection. The uid for the connection is included in the event listener name.
+ * Adds the ice candidate upon listener firing.
+ */
 function setUpReceiveIceCandidateEventListener(pc, uid, peerType) {
   var eventListenerName = 'receiveIceCandidate-' + peerType + '-' + uid;
   console.log('eventListenerName in client ' + eventListenerName)
   maygh.socket.on(eventListenerName, function (data) {
     var candidate = data['candidate']
+    // add the ice candidate that was received to the connection
     pc.addIceCandidate(new RTCIceCandidate(candidate))
     console.log("client got myself an ice candidateeeeeeeeeeee from eventListenerName " + eventListenerName)
     console.log(pc)
