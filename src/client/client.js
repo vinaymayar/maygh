@@ -31,8 +31,9 @@ Maygh.prototype.connect = function() {
     function (data, callback) {
       console.log("client received offer")
       var description = data['description']
+      var fromPeer = data['fromPeer']
       console.log(description)
-      pc = createRemotePeerConnection() // should set all callbacks
+      pc = createRemotePeerConnection(fromPeer) // should set all callbacks
       pc.setRemoteDescription(new RTCSessionDescription(description))
 
       pc.createAnswer(
@@ -42,6 +43,13 @@ Maygh.prototype.connect = function() {
         },
         createAnswerFailCallback
       );
+
+      maygh.socket.on('receiveIceCandidate', function (data) {
+        var candidate = data['candidate']
+        pc.addIceCandidate(new RTCIceCandidate(candidate))
+        console.log("remote client got myself an ice candidateeeeeeeeeeee")
+        console.log(pc)
+      });
 
     });
 
@@ -101,6 +109,13 @@ function lookupSuccessCallback(data, contentHash, src, domElt) {
         createOfferSuccessCallback(pc, pid, description)
       },
       createOfferFailCallback)
+
+    maygh.socket.on('receiveIceCandidate', function (data) {
+        var candidate = data['candidate']
+        pc.addIceCandidate(new RTCIceCandidate(candidate))
+        console.log("remote client got myself an ice candidateeeeeeeeeeee")
+        console.log(pc)
+      });
 
   } else {
     console.log("loaded contents from source")

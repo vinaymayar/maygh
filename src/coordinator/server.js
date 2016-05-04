@@ -59,7 +59,8 @@ io.on('connection', function (socket) {
     var description = data['description']
 
     if (io.sockets.connected[toPeer])
-      io.sockets.connected[toPeer].emit('receiveOffer', {'description': description},
+      io.sockets.connected[toPeer].emit('receiveOffer',
+        {'description': description, 'fromPeer': socket.id },
         function (res) {
           res['success'] = true
           console.log(res)
@@ -69,17 +70,13 @@ io.on('connection', function (socket) {
       callback({'success': false})
   });
 
-  // socket.on('sendIceCandidate', function (data, callback) {
-  //   var candidate = data['candidate']
-  //   var toPeer = data['toPeer']
+  socket.on('sendIceCandidate', function (data, callback) {
+    var candidate = data['candidate']
+    var toPeer = data['toPeer']
 
-  //   if (io.sockets.connected[toPeer])
-  //     io.sockets.connected[toPeer].emit('receiveIceCandidate', {'description': description},
-  //       function (res) {
-  //         res['success'] = true
-  //         callback(res)
-  //       });
-  // })
+    if (io.sockets.connected[toPeer])
+      io.sockets.connected[toPeer].emit('receiveIceCandidate', {'candidate': candidate})
+  })
 
   // receive a description from p1, callback p1
       // forward description to p2

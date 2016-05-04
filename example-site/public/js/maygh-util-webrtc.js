@@ -23,7 +23,7 @@ function createLocalPeerConnection(remotePID) {
 }
 
 
-function createRemotePeerConnection() {
+function createRemotePeerConnection(remotePID) {
     console.log("createRemoteConnection")
 
     var servers = null
@@ -33,7 +33,9 @@ function createRemotePeerConnection() {
 
     pc.ondatachannel = remoteChannelCallback
 
-    pc.onicecandidate = gotIceCandidate
+    pc.onicecandidate = function(event) {
+        gotIceCandidate(pc, remotePID, event)
+    }
 
     return pc
 
@@ -58,9 +60,9 @@ function onRemoteMessageCallback(event) {
 }
 
 function gotIceCandidate(pc, remotePID, event) {
-    // console.log("got ice candidate")
-    // if (event.candidate) {
-    //     maygh.socket.emit('sendIceCandidate',
-    //         {'toPeer': remotePID, 'candidate': event.candidate})
-    // }
+    console.log("got ice candidate")
+    if (event.candidate) {
+        maygh.socket.emit('sendIceCandidate',
+            {'toPeer': remotePID, 'candidate': event.candidate})
+    }
 }
