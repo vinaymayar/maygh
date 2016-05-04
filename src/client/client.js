@@ -97,7 +97,7 @@ function loadAndDisplayContent(data, contentHash, src, domElt) {
     var connectionID = generateUID(contentHash)
 
     // create peerconnection and set up some callbacks
-    pc = createLocalPeerConnection(pid, connectionID, contentHash, displayContent(domElt))
+    pc = createLocalPeerConnection(pid, connectionID, contentHash, displayContent(domElt, contentHash))
 
     // sets up the event listener for ice candidate events
     setUpReceiveIceCandidateEventListener(pc, connectionID, 'local')
@@ -120,9 +120,12 @@ function loadAndDisplayContent(data, contentHash, src, domElt) {
 }
 
 
-function displayContent(domElt) {
+function displayContent(domElt, contentHash) {
   return function(content) {
+    console.log("displaying content from a peer!!!")
+    console.log(content.slice(0, 1000))
     domElt.src = content
+    localStorage.setItem(contentHash, content)
   }
 }
 

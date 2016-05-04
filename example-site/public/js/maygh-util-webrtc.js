@@ -4,6 +4,8 @@
  * @param  connectionID id of the connection, shared by both local and remote
  * @return              peer connection
  */
+const CHUNK_LENGTH = 10000;
+
 function createLocalPeerConnection(remotePID, connectionID, contentHash, loadContent) {
     console.log("createLocalConnection")
 
@@ -12,10 +14,12 @@ function createLocalPeerConnection(remotePID, connectionID, contentHash, loadCon
     var pc = new webkitRTCPeerConnection(servers, pcConstraints);
 
     dataChannel = pc.createDataChannel('dataChannel')
+    var contentChunks = [];
+
     dataChannel.onmessage = function(event) {
+
         console.log('onmessage in the local connection')
-        console.log(event.data)
-        loadContent(event.data)
+        reassembleContentChunks(event, contentChunks, loadContent)
     }
     dataChannel.onopen = function () {
         console.log("DataChannel in local connection opened")
@@ -31,6 +35,36 @@ function createLocalPeerConnection(remotePID, connectionID, contentHash, loadCon
     }
 
     return pc
+}
+
+function onReadContent(dataChannel, text) {
+    var data = {}; // data object to transmit over data channel
+
+    if (text.length > CHUNK_LENGTH) {
+        data.message = text.slice(0, CHUNK_LENGTH); // getting chunk using predefined chunk length
+    } else {
+        data.message = text;
+        data.last = true;
+    }
+
+    dataChannel.send(JSON.stringify(data)); // use JSON.stringify for chrome!
+
+    var remainingContent = text.slice(data.message.length);
+    if (remainingContent.length) setTimeout(function () {
+        onReadContent(dataChannel, remainingContent); // continue transmitting
+    }, 50)
+}
+
+function reassembleContentChunks(event, contentChunks, loadContent) {
+    var data = JSON.parse(event.data);
+
+    contentChunks.push(data.message); // pushing chunks in array
+
+    if (data.last) {
+        console.log('data.last == true')
+        var datauri = contentChunks.join('')
+        loadContent(datauri)
+    }
 }
 
 /**
@@ -83,7 +117,8 @@ function onRemoteMessageCallback(dataChannel, event) {
     var content = localStorage.getItem(contentHash)
 
     console.log('remote sending data to local')
-    dataChannel.send(content)
+    console.log('content size ' + content.length)
+    onReadContent(dataChannel, content)
 }
 
 /**
