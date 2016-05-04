@@ -4,7 +4,7 @@
  * @param  connectionID id of the connection, shared by both local and remote
  * @return              peer connection
  */
-function createLocalPeerConnection(remotePID, connectionID) {
+function createLocalPeerConnection(remotePID, connectionID, contentHash, loadContent) {
     console.log("createLocalConnection")
 
     var servers = null
@@ -12,13 +12,18 @@ function createLocalPeerConnection(remotePID, connectionID) {
     var pc = new webkitRTCPeerConnection(servers, pcConstraints);
 
     dataChannel = pc.createDataChannel('dataChannel')
-
+    dataChannel.onmessage = function(event) {
+        console.log('onmessage in the local connection')
+        console.log(event.data)
+        loadContent(event.data)
+    }
     dataChannel.onopen = function () {
-        console.log("dataChannel opened")
-        dataChannel.send("Hi, pls hear me.")
+        console.log("DataChannel in local connection opened")
+        console.log(contentHash)
+        dataChannel.send(contentHash)
     }
     dataChannel.onclose = function () {
-        console.log("Data Channel closed.")
+        console.log("Data Channel in local connection closed.")
     }
 
     pc.onicecandidate = function(event) {
@@ -57,20 +62,28 @@ function setRemoteChannelCallbacks(event) {
     console.log("setRemoteChannelCallbacks called")
 
     var dataChannel = event.channel
-    dataChannel.onmessage = onRemoteMessageCallback
+    dataChannel.onmessage = function (event) {
+        onRemoteMessageCallback(dataChannel, event)
+    }
 
     dataChannel.onopen =  function (){
         console.log("Data Channel in the remote opened")
-        dataChannel.send("get my msg pls")
     }
+
     dataChannel.onclose = function () {
         console.log("Data Channel in the remote closed")
     }
 }
 
-function onRemoteMessageCallback(event) {
+function onRemoteMessageCallback(dataChannel, event) {
     // this is interesting, but not yet
+    console.log('onRemoteMessageCallback called')
     console.log(event.data)
+    var contentHash = event.data
+    var content = localStorage.getItem(contentHash)
+
+    console.log('remote sending data to local')
+    dataChannel.send(content)
 }
 
 /**

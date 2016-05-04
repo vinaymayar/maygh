@@ -97,7 +97,7 @@ function loadAndDisplayContent(data, contentHash, src, domElt) {
     var connectionID = generateUID(contentHash)
 
     // create peerconnection and set up some callbacks
-    pc = createLocalPeerConnection(pid, connectionID)
+    pc = createLocalPeerConnection(pid, connectionID, contentHash, displayContent(domElt))
 
     // sets up the event listener for ice candidate events
     setUpReceiveIceCandidateEventListener(pc, connectionID, 'local')
@@ -116,6 +116,13 @@ function loadAndDisplayContent(data, contentHash, src, domElt) {
     // sends a update message telling the server, we have the element
     // in out local storage
     maygh.socket.emit('update', {'contentHash': contentHash})
+  }
+}
+
+
+function displayContent(domElt) {
+  return function(content) {
+    domElt.src = content
   }
 }
 
