@@ -43,7 +43,7 @@ function receiveOfferFromPeer(data, callback) {
 
   console.log(description)
   pc = createRemotePeerConnection(fromPeer, connectionID) // also sets up all the datachannel, onicecandidate callbacks
-  
+
   setUpReceiveIceCandidateEventListener(pc, connectionID, 'remote')
   pc.setRemoteDescription(new RTCSessionDescription(description))
 
@@ -65,10 +65,11 @@ Maygh.prototype.load = function(contentHash, id, src) {
   var domElt = document.getElementById(id);
 
   // check if item is already in localstorage
-  // if (localStorage.getItem(contentHash) != null) {
-  //   domElt.src = localStorage.getItem(contentHash);
-  //   return
-  // }
+  // console.log(localStorage.getItem(contentHash).slice(0,100))
+  if (localStorage.getItem(contentHash) != null) {
+    domElt.src = localStorage.getItem(contentHash);
+    return
+  }
 
   // otherwise, look up the content w/ coordinator and then save to local storage
 	this.socket.emit('lookup', {'contentHash': contentHash},

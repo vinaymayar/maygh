@@ -4,7 +4,7 @@
  * @param  connectionID id of the connection, shared by both local and remote
  * @return              peer connection
  */
-const CHUNK_LENGTH = 10000;
+const CHUNK_LENGTH = 50000; // DONT INCREASE THIS!
 
 function createLocalPeerConnection(remotePID, connectionID, contentHash, loadContent) {
     console.log("createLocalConnection")
@@ -52,7 +52,7 @@ function onReadContent(dataChannel, text) {
     var remainingContent = text.slice(data.message.length);
     if (remainingContent.length) setTimeout(function () {
         onReadContent(dataChannel, remainingContent); // continue transmitting
-    }, 50)
+    }, 1)
 }
 
 function reassembleContentChunks(event, contentChunks, loadContent) {
