@@ -124,7 +124,7 @@ function onRemoteMessageCallback(dataChannel, event) {
 /**
  * Forwards the candidate to paired peer
  */
-function sendIceCandidateToPeer(pc, remotePID, connectionID, peerType, event) {
+function sendIceCandidateToPeer(pc, toPeer, connectionID, peerType, event) {
     console.log("got ice candidate")
 
     var eventListenerName = 'receiveIceCandidate-' +
@@ -135,7 +135,7 @@ function sendIceCandidateToPeer(pc, remotePID, connectionID, peerType, event) {
     if (event.candidate) {
         maygh.socket.emit('sendIceCandidate',
             {
-                'toPeer': remotePID,
+                'toPeer': toPeer,
                 'candidate': event.candidate,
                 'clientIceCandidateEventListenerName': eventListenerName
             });
@@ -151,7 +151,12 @@ function sendOfferToPeer(pc, toPeer, connectionID, description){
 
   pc.setLocalDescription(description)
 
-  var data = {'description': description, 'toPeer': toPeer, 'connectionID': connectionID}
+  var data = {
+    'description': description,
+    'toPeer': toPeer,
+    'fromPeer': maygh.socket.id,
+    'connectionID': connectionID
+    }
   maygh.socket.emit('sendOffer', data,
     function (res) {
       gotAnswer(pc, res)

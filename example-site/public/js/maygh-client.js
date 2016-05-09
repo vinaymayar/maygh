@@ -23,11 +23,13 @@ Maygh.prototype.connect = function() {
 
   // on connection to a coordinator, immediately send an 'initiate' event
   this.socket.on('connect', function () {
-    maygh.socket.emit('initiate', {})
-    console.log("Client connected")
+    maygh.socket.emit('initiate', {'pid': maygh.socket.id})
+    console.log("Client " + maygh.socket.id + ' connect')
   });
 
   this.socket.on('receiveOffer', receiveOfferFromPeer);
+
+  this.socket.on('heartbeat', receiveHeartbeat);
 
   // needs to be listening for offers
   // create a remote peerconnection
@@ -66,10 +68,10 @@ Maygh.prototype.load = function(contentHash, id, src) {
 
   // check if item is already in localstorage
   // console.log(localStorage.getItem(contentHash).slice(0,100))
-  if (localStorage.getItem(contentHash) != null) {
-    domElt.src = localStorage.getItem(contentHash);
-    return
-  }
+  // if (localStorage.getItem(contentHash) != null) {
+  //   domElt.src = localStorage.getItem(contentHash);
+  //   return
+  // }
 
   // otherwise, look up the content w/ coordinator and then save to local storage
 	this.socket.emit('lookup', {'contentHash': contentHash},
@@ -116,7 +118,8 @@ function loadAndDisplayContent(data, contentHash, src, domElt) {
 
     // sends a update message telling the server, we have the element
     // in out local storage
-    maygh.socket.emit('update', {'contentHash': contentHash})
+    maygh.socket.emit('update',
+      {'contentHash': contentHash, 'pid': maygh.socket.id})
   }
 }
 
@@ -127,6 +130,8 @@ function displayContent(domElt, contentHash) {
     console.log(content.slice(0, 1000))
     domElt.src = content
     localStorage.setItem(contentHash, content)
+    maygh.socket.emit('update',
+      {'contentHash': contentHash, 'pid': maygh.socket.id})
   }
 }
 
@@ -172,6 +177,14 @@ function setUpReceiveIceCandidateEventListener(pc, uid, peerType) {
     console.log("client got myself an ice candidateeeeeeeeeeee from eventListenerName " + eventListenerName)
     console.log(pc)
   });
+}
+
+function receiveHeartbeat(data) {
+  var timestamp = (new Date()).getTime()
+  var id = maygh.socket.id
+  // console.log('client ' + id + 'received heartbeat at ' + timestamp)
+  var res = {'id': id, 'timestamp': timestamp}
+  maygh.socket.emit('heartbeatReply', res)
 }
 
 
