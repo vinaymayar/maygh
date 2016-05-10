@@ -13,7 +13,7 @@ function createLocalPeerConnection(remotePID, connectionID, contentHash, loadCon
     var pcConstraints = null
     var pc = new webkitRTCPeerConnection(servers, pcConstraints);
 
-    dataChannel = pc.createDataChannel('dataChannel')
+    var dataChannel = pc.createDataChannel('dataChannel')
     var contentChunks = [];
 
     dataChannel.onmessage = function(event) {
@@ -22,8 +22,7 @@ function createLocalPeerConnection(remotePID, connectionID, contentHash, loadCon
         reassembleContentChunks(event, contentChunks, loadContent)
     }
     dataChannel.onopen = function () {
-        console.log("DataChannel in local connection opened")
-        console.log(contentHash)
+        console.log("DataChannel in local connection opened. Getting content " + contentHash)
         dataChannel.send(contentHash)
     }
     dataChannel.onclose = function () {
@@ -131,7 +130,7 @@ function sendIceCandidateToPeer(pc, toPeer, connectionID, peerType, event) {
                             getOtherPeerType(peerType) +
                             '-' +
                             connectionID;
-
+    console.log('send ice candidate on eventListenerName ' + eventListenerName + 'toPeer ' + toPeer)
     if (event.candidate) {
         maygh.socket.emit('sendIceCandidate',
             {
@@ -147,7 +146,7 @@ function sendIceCandidateToPeer(pc, toPeer, connectionID, peerType, event) {
  * Sends offer to paired peer
  */
 function sendOfferToPeer(pc, toPeer, connectionID, description){
-  console.log('sendOfferToPeer called')
+  console.log('sendOfferToPeer called. connectionID is ' + connectionID)
 
   pc.setLocalDescription(description)
 

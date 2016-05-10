@@ -44,7 +44,7 @@ function receiveOfferFromPeer(data, callback) {
   var connectionID = data['connectionID'] // the uniquely identifying connection id
 
   console.log(description)
-  pc = createRemotePeerConnection(fromPeer, connectionID) // also sets up all the datachannel, onicecandidate callbacks
+  var pc = createRemotePeerConnection(fromPeer, connectionID) // also sets up all the datachannel, onicecandidate callbacks
 
   setUpReceiveIceCandidateEventListener(pc, connectionID, 'remote')
   pc.setRemoteDescription(new RTCSessionDescription(description))
@@ -100,7 +100,7 @@ function loadAndDisplayContent(data, contentHash, src, domElt) {
     var connectionID = generateUID(contentHash)
 
     // create peerconnection and set up some callbacks
-    pc = createLocalPeerConnection(pid, connectionID, contentHash, displayContent(domElt, contentHash))
+    var pc = createLocalPeerConnection(pid, connectionID, contentHash, displayContent(domElt, contentHash))
 
     // sets up the event listener for ice candidate events
     setUpReceiveIceCandidateEventListener(pc, connectionID, 'local')
@@ -169,12 +169,12 @@ function loadFromSrc(contentHash, src, domElt) {
  */
 function setUpReceiveIceCandidateEventListener(pc, uid, peerType) {
   var eventListenerName = 'receiveIceCandidate-' + peerType + '-' + uid;
-  console.log('eventListenerName in client ' + eventListenerName)
+  console.log('set up eventListenerName in client ' + eventListenerName)
   maygh.socket.on(eventListenerName, function (data) {
     var candidate = data['candidate']
     // add the ice candidate that was received to the connection
     pc.addIceCandidate(new RTCIceCandidate(candidate))
-    console.log("client got myself an ice candidateeeeeeeeeeee from eventListenerName " + eventListenerName)
+    console.log("client got an ice candidate from eventListenerName " + eventListenerName)
     console.log(pc)
   });
 }

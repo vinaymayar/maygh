@@ -67,7 +67,7 @@ io.on('connection', function (socket) {
         {'description': description, 'fromPeer': fromPeer, 'connectionID': connectionID },
         function (res) {
           res['success'] = true
-          console.log(res)
+          console.log('received offer from peer. connectionID is ' + connectionID)
           callback(res)
         });
     else
