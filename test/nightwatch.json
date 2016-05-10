@@ -1,0 +1,37 @@
+{
+  "src_folders" : ["./tests"],
+  "output_folder" : "./results",
+  "live_output" : true,
+  "parallel_process_delay" : 1500,
+
+  "selenium" : {
+    "start_process" : true,
+    "server_path" : "./bin/selenium-server-standalone-2.53.0.jar",
+    "log_path" : "",
+    "cli_args" : {
+      "webdriver.chrome.driver" : "bin/chromedriver_mac32"
+    }
+  },
+
+  "test_settings" : {
+    "default" : {
+      "launch_url" : "http://localhost:8080",
+      "silent" : true,
+      "screenshots" : {
+        "enabled" : false,
+        "path" : "./screenshots"
+      }
+    },
+
+    "chrome" : {
+      "desiredCapabilities" : {
+        "browserName" : "chrome",
+        "chromeOptions" : {
+          "args" : [
+            "allow-file-access-from-files"
+          ]
+        }
+      }
+    }
+  }
+}
