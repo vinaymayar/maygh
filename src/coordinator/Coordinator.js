@@ -24,11 +24,14 @@ function Coordinator() {
 // specified content.
 // Returns null if no client has that content
 Coordinator.prototype.lookup = function(contentHash) {
-  clients = this.contentToClientMap[contentHash]
+  var clients = this.contentToClientMap[contentHash]
+
   if (clients == null || clients.length == 0) {
     return null
   }
-  return clients[0]
+
+  var index = getRandomInt(0, clients.length)
+  return clients[index]
 };
 
 // Adds a client to the clientsInfoMap with given clientInfo.
@@ -94,6 +97,15 @@ function isClientUnresponsive(clientTimestamp){
   return now - clientTimestamp > UNRESPONSIVE_TIMEOUT
 
 }
+
+/**
+ * Returns a random int in [start, end-1]
+ */
+function getRandomInt(start, end) {
+  return Math.floor(Math.random() * (end-1)) + start
+}
+
+
 
 
 exports.Coordinator = Coordinator
