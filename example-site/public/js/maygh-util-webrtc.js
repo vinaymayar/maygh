@@ -21,10 +21,7 @@ function createLocalPeerConnection(remotePID, domElt, connectionID, contentHash,
   var contentChunks = [];
   var receivedAllContent = false
 
-  var establishConnectionTimeout = setTimeout(function(){
-    console.log('establishConnection timeout')
-    loadFromSrc()
-  }, LOAD_FROM_PEER_TIMEOUT)
+  var establishConnectionTimeout = setTimeout(loadFromSrc, LOAD_FROM_PEER_TIMEOUT)
 
   var messageTimeout;
 
@@ -37,10 +34,7 @@ function createLocalPeerConnection(remotePID, domElt, connectionID, contentHash,
     console.log('onmessage in the local connection.')
     receivedAllContent = reassembleContentChunks(event, contentChunks, loadFromPeer)
     if (!receivedAllContent)
-      messageTimeout = setTimeout(function(){
-        console.log('message timeout')
-        loadFromSrc()
-      }, MESSAGE_TIMEOUT)
+      messageTimeout = setTimeout(loadFromSrc, MESSAGE_TIMEOUT)
 
   }
 
@@ -48,10 +42,7 @@ function createLocalPeerConnection(remotePID, domElt, connectionID, contentHash,
     clearTimeout(establishConnectionTimeout)
     console.log('DataChannel in local connection opened. Getting content ' + contentHash)
     dataChannel.send(contentHash)
-    messageTimeout = setTimeout(function(){
-        console.log('message timeout')
-        loadFromSrc()
-      }, MESSAGE_TIMEOUT)
+    messageTimeout = setTimeout(loadFromSrc, MESSAGE_TIMEOUT)
   }
 
   dataChannel.onclose = function () {

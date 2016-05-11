@@ -163,7 +163,7 @@ function verifyContentHash(content, contentHash) {
 */
 function loadFromSrc(contentHash, src, domElt) {
   // if element is already loaded
-  if (isLoaded(domElt)){
+  if (domElt.src){
     console.log('loadFromSrc: content already loaded')
     return
   }
