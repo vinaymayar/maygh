@@ -27,6 +27,7 @@ function createLocalPeerConnection(remotePID, connectionID, contentHash, loadFro
 
 
   dataChannel.onmessage = function(event) {
+    // if content has already been loaded, do nothing
     if (isContentLoaded()) {
       return
     }
@@ -197,7 +198,6 @@ function gotAnswer(pc, res, loadFromSrc) {
   else {
     loadFromSrc()
   }
-
 }
 
 function createAnswerSuccess(pc, description, callback) {
@@ -205,17 +205,13 @@ function createAnswerSuccess(pc, description, callback) {
   pc.setLocalDescription(description)
   callback({'description': description, 'success': true})
 }
-// Maybe should do something more interesting with these...
+
 function createAnswerError(error, callback) {
   console.log('createAnswerError: ' + error)
   callback({'success': false})
 }
 
-
-function createOfferError(error) {
-  console.log('createOfferError: ' + error)
-}
-
+// Don't know exactly what are the implications of this
 function addIceCandidateError(error) {
   console.log('addIceCandidateError: ' + error)
 }

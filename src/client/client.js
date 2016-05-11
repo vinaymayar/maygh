@@ -9,6 +9,7 @@
 // aware of us.
 //
 
+const LOOKUP_TIMEOUT = 3000
 
 function Maygh() {
   // socket connecting client to coordinator
@@ -27,12 +28,8 @@ Maygh.prototype.connect = function() {
     console.log("Client " + maygh.socket.id + ' connect')
   });
 
+  // listens to possible offers from other peers
   this.socket.on('receiveOffer', receiveOfferFromPeer);
-
-  // needs to be listening for offers
-  // create a remote peerconnection
-  // set up all callbacks
-  // call server call back with it's answer
 };
 
 function receiveOfferFromPeer(data, callback) {
@@ -73,8 +70,12 @@ Maygh.prototype.load = function(contentHash, id, src) {
   // }
 
   // otherwise, look up the content w/ coordinator and then save to local storage
+  var lookupTimeout = setTimeout(function() {
+    loadFromSrc(contentHash, src, domElt)
+  }, LOOKUP_TIMEOUT)
 	this.socket.emit('lookup', {'contentHash': contentHash},
     function(data) {
+      clearTimeout(lookupTimeout)
       loadAndDisplayContent(data, contentHash, src, domElt)
     });
 };
@@ -124,7 +125,9 @@ function loadAndDisplayContent(data, contentHash, src, domElt) {
           loadFromSrc(contentHash, src, domElt)
         })
       },
-      createOfferError)
+      function (error) {
+        loadFromSrc(contentHash, src, domElt)
+      })
 
   } else {
     loadFromSrc(contentHash, src, domElt)
