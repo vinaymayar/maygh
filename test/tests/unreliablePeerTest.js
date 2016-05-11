@@ -9,7 +9,7 @@ module.exports = new (function() {
 
   if(isFirstClient) {
     tests['first client continually connects and disconnects'] = function(client) {
-      for(totalWaitTime = 0; totalWaitTime < 9000;) {
+      for(totalWaitTime = 0; totalWaitTime < 7000;) {
         waitTime = Math.random() * 200;
         totalWaitTime += waitTime;
         client

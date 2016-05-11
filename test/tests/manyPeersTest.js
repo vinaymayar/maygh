@@ -20,12 +20,12 @@ module.exports = new (function() {
       client
         .expect.element('#image2').to.have.attribute('src').after(4000);
       client
-        .pause(25000);
+        .pause(30000);
     }
   } else {
     tests['second client loads small image from only remaining online peer'] = function(client) {
       client
-        .pause(20000)
+        .pause(25000)
         .url('http://localhost:8080/')
         .waitForElementVisible('body', 1000)
         .expect.element('#image1').to.have.attribute('src').after(2000);

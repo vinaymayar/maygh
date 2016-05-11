@@ -23,12 +23,12 @@ module.exports = new (function() {
           this.switchWindow(result.value[1]);
         })
         .waitForElementVisible('body', 2000)
-        .pause(12000);
+        .pause(10000);
     }
   } else {
     tests['second client loads small image from peer'] = function(client) {
       client
-        .pause(8000)
+        .pause(6000)
         .url('http://localhost:8080/')
         .waitForElementVisible('body', 1000)
         .expect.element('#image1').to.have.attribute('src').after(2000);
