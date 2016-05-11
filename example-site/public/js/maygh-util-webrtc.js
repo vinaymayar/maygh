@@ -9,7 +9,7 @@ const UNRESPONSIVE_COORDINATOR_TIMEOUT = 100
 const LOAD_FROM_PEER_TIMEOUT = 3000
 const MESSAGE_TIMEOUT = 50
 
-function createLocalPeerConnection(remotePID, domElt, connectionID, contentHash, loadFromPeer, loadFromSrc, isContentLoaded) {
+function createLocalPeerConnection(remotePID, connectionID, contentHash, loadFromPeer, loadFromSrc, isContentLoaded) {
   console.log('createLocalConnection')
 
   var servers = null

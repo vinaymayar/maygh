@@ -100,8 +100,7 @@ function loadAndDisplayContent(data, contentHash, src, domElt) {
     var connectionID = generateUID(contentHash)
 
     // create peerconnection and set up some callbacks
-    var pc = createLocalPeerConnection(pid, connectionID, contentHash, verifyAndDisplayContent(domElt, contentHash, src),
-     function() {
+    var pc = createLocalPeerConnection(pid, connectionID, contentHash, verifyAndDisplayContent(domElt, contentHash, src), function() {
         loadFromSrc(contentHash, src, domElt)
       },
       function() {
@@ -132,10 +131,8 @@ function loadAndDisplayContent(data, contentHash, src, domElt) {
   }
 }
 
-
 function verifyAndDisplayContent(domElt, contentHash, src) {
   return function(content) {
-    // if element is already loaded
     if (domElt.src){
       console.log('loadFromPeer: content already loaded')
       return
