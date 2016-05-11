@@ -1,18 +1,26 @@
+/**
+ * In this test, the first client may fail randomly at any point after
+ * the second client initiates loading.  It may also be the case that
+ */
+
 module.exports = new (function() {
   var isFirstClient = process.env.__NIGHTWATCH_ENV_KEY == 'chrome_1';
   var tests = this;
 
   if(isFirstClient) {
     tests['first client continually connects and disconnects'] = function(client) {
-      for(ctr = 100; ctr > 0; ctr--) {
+      for(totalWaitTime = 0; totalWaitTime < 9000;) {
+        waitTime = Math.random() * 200;
+        totalWaitTime += waitTime;
         client
           .url('http://localhost:8080/')
+          .pause(waitTime)
       }
     }
   } else {
     tests['second client loads small image from somewhere'] = function(client) {
       client
-        .pause(2000)
+        .pause(3000)
         .url('http://localhost:8080/')
         .waitForElementVisible('body', 1000)
         .expect.element('#image1').to.have.attribute('src').after(2000);

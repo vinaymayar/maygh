@@ -1,3 +1,9 @@
+/**
+ * In this test, many peers connect and disconnect from the coordinator.
+ * The last one stays online, and should be a viable source from which
+ * the second client can load static resources.
+ */
+
 module.exports = new (function() {
   var isFirstClient = process.env.__NIGHTWATCH_ENV_KEY == 'chrome_1';
   var tests = this;
