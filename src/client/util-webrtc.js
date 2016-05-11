@@ -5,9 +5,10 @@
  * @return              peer connection
  */
 const CHUNK_LENGTH = 50000; // DONT INCREASE THIS!
+const UNRESPONSIVE_COORDINATOR_TIMEOUT = 100
 
 function createLocalPeerConnection(remotePID, connectionID, contentHash, loadContent) {
-    console.log("createLocalConnection")
+    console.log('createLocalConnection')
 
     var servers = null
     var pcConstraints = null
@@ -15,18 +16,21 @@ function createLocalPeerConnection(remotePID, connectionID, contentHash, loadCon
 
     var dataChannel = pc.createDataChannel('dataChannel')
     var contentChunks = [];
+    var receivedAllContent = false
 
     dataChannel.onmessage = function(event) {
-
         console.log('onmessage in the local connection')
-        reassembleContentChunks(event, contentChunks, loadContent)
+        receivedAllContent = reassembleContentChunks(event, contentChunks, loadContent)
     }
     dataChannel.onopen = function () {
-        console.log("DataChannel in local connection opened. Getting content " + contentHash)
+        console.log('DataChannel in local connection opened. Getting content ' + contentHash)
         dataChannel.send(contentHash)
     }
     dataChannel.onclose = function () {
-        console.log("Data Channel in local connection closed.")
+        if (!receivedAllContent)
+            console.log('Data channel for '+ contentHash + ' closed during file transfer')
+        else
+            console.log('Data channel for '+ contentHash + ' closed after file transfer')
     }
 
     pc.onicecandidate = function(event) {
@@ -62,8 +66,11 @@ function reassembleContentChunks(event, contentChunks, loadContent) {
     if (data.last) {
         console.log('data.last == true')
         var datauri = contentChunks.join('')
+        receivedContent = true
         loadContent(datauri)
     }
+
+    return data.last
 }
 
 /**
@@ -73,7 +80,7 @@ function reassembleContentChunks(event, contentChunks, loadContent) {
  * @return              peer connection
  */
 function createRemotePeerConnection(localPID, connectionID) {
-    console.log("createRemoteConnection")
+    console.log('createRemoteConnection')
 
     var servers = null
     var pcConstraints = null
@@ -92,24 +99,23 @@ function createRemotePeerConnection(localPID, connectionID) {
  * Set the callbacks for the datachannel in the remote connection
  */
 function setRemoteChannelCallbacks(event) {
-    console.log("setRemoteChannelCallbacks called")
+    console.log('setRemoteChannelCallbacks called')
 
     var dataChannel = event.channel
     dataChannel.onmessage = function (event) {
         onRemoteMessageCallback(dataChannel, event)
     }
 
-    dataChannel.onopen =  function (){
-        console.log("Data Channel in the remote opened")
+    dataChannel.onopen =  function () {
+        console.log('Data Channel in the remote opened')
     }
 
     dataChannel.onclose = function () {
-        console.log("Data Channel in the remote closed")
+        console.log('Data Channel in the remote closed')
     }
 }
 
 function onRemoteMessageCallback(dataChannel, event) {
-    // this is interesting, but not yet
     console.log('onRemoteMessageCallback called')
     console.log(event.data)
     var contentHash = event.data
@@ -124,7 +130,7 @@ function onRemoteMessageCallback(dataChannel, event) {
  * Forwards the candidate to paired peer
  */
 function sendIceCandidateToPeer(pc, toPeer, connectionID, peerType, event) {
-    console.log("got ice candidate")
+    console.log('got ice candidate')
 
     var eventListenerName = 'receiveIceCandidate-' +
                             getOtherPeerType(peerType) +
@@ -145,23 +151,26 @@ function sendIceCandidateToPeer(pc, toPeer, connectionID, peerType, event) {
 /**
  * Sends offer to paired peer
  */
-function sendOfferToPeer(pc, data, answerError){
+function sendOfferToPeer(pc, data, unresponsivePeerError, unresponsiveCoordinatorError){
   console.log('sendOfferToPeer called. connectionID is ' + data['connectionID'])
 
   var description = data['description']
   pc.setLocalDescription(description)
 
+  var timeout = setTimeout(unresponsiveCoordinatorError, UNRESPONSIVE_COORDINATOR_TIMEOUT);
+
   maygh.socket.emit('sendOffer', data,
     function (res) {
-      gotAnswer(pc, res, answerError)
+        clearTimeout(timeout)
+        gotAnswer(pc, res, unresponsivePeerError)
     });
 }
 
 /**
  * Callback called when an answer to an offer is received
  */
-function gotAnswer(pc, res, answerError) {
-  console.log("gotAnswerCallback called")
+function gotAnswer(pc, res, unresponsivePeerError) {
+  console.log('gotAnswerCallback called')
 
   var remoteDescription = res['description']
   var success = res['success']
@@ -170,11 +179,11 @@ function gotAnswer(pc, res, answerError) {
   if (success)
     pc.setRemoteDescription(new RTCSessionDescription(remoteDescription))
   else {
-    console.log("gotAnswer error")
+    console.log('gotAnswer error')
     var lookupSuccess = res['lookupSuccess']
     var pid = res['pid']
     var data = {'success': lookupSuccess, 'pid': pid}
-    answerError(data)
+    unresponsivePeerError(data)
   }
 
 }
@@ -186,5 +195,5 @@ function createAnswerError(error) {
 }
 
 function createOfferError(error) {
-  console.log("createOfferError: " + error)
+  console.log('createOfferError: ' + error)
 }

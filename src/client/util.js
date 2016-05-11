@@ -39,6 +39,7 @@ function generateUID(contentHash) {
   return timestamp + contentHash
 }
 
+
 /**
  * Returns 'remote' if peerType is 'local', and 'local' otherwise.
  */
@@ -47,4 +48,13 @@ function getOtherPeerType(peerType) {
         return 'remote'
     }
     return 'local'
+}
+
+
+function sleep(millis)
+ {
+  var date = new Date();
+  var curDate = null;
+  do { curDate = new Date(); }
+  while(curDate-date < millis);
 }

@@ -104,6 +104,15 @@ function loadAndDisplayContent(data, contentHash, src, domElt) {
     // sets up the event listener for ice candidate events
     setUpReceiveIceCandidateEventListener(pc, connectionID, 'local')
 
+    var unresponsiveCoordinatorError = function(){
+            console.log('coordinator was unresponsive, load form source')
+            loadFromSrc(contentHash, src, domElt)
+          }
+    var unresponsivePeerError = function(errorData){
+            console.log('peer was unresponsive, retry with different peer')
+            loadAndDisplayContent(errorData, contentHash, src, domElt)
+          }
+
     // create an offer from that peer connection
     pc.createOffer(
       function(description) {
@@ -115,14 +124,11 @@ function loadAndDisplayContent(data, contentHash, src, domElt) {
           'contentHash': contentHash
         }
 
-        sendOfferToPeer(pc, sendOfferToPeerData, function(errorData){
-          loadAndDisplayContent(errorData, contentHash, src, domElt)
-        })
+        sendOfferToPeer(pc, sendOfferToPeerData, unresponsivePeerError,unresponsiveCoordinatorError)
       },
       createOfferError)
 
   } else {
-    console.log("loaded contents from source")
     loadFromSrc(contentHash, src, domElt)
 
     // sends a update message telling the server, we have the element
@@ -159,6 +165,7 @@ function verifyContentHash(content, contentHash) {
  * Loads content from origin and displays it in the appropriate dom element
 */
 function loadFromSrc(contentHash, src, domElt) {
+  console.log("loaded contents from source")
   // Makes a GET request to src and grabs the data
   var xmlHttp = new XMLHttpRequest()
   xmlHttp.open( "GET", src, true );
