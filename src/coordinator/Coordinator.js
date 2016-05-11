@@ -4,8 +4,6 @@
  * @author: ?
  */
 
-const  UNRESPONSIVE_TIMEOUT = 1000;
-
 function Coordinator() {
   // map from content hashes to lists of client
   // pids that have that content
@@ -60,11 +58,12 @@ Coordinator.prototype.setClientTimestamp = function(clientPID, timestamp) {
   // console.log('received heartbeat ' + timestamp + 'from client ' + clientPID)
 }
 
-Coordinator.prototype.removeUnresponsiveClients = function() {
+Coordinator.prototype.removeUnresponsiveClients = function(io) {
   var clients = Object.keys(this.clientsInfoMap)
   for (i = 0; i < clients.length; i++) {
     var client = clients[i]
-    if (isClientUnresponsive(this.clientsInfoMap[client]))
+    var connected = io.sockets.connected['/#' + client] // '/#' from socket.io convention
+    if (!connected)
       this.removeClient(client)
   }
 }
@@ -90,12 +89,6 @@ Coordinator.prototype.removeClientFromContentHash = function(contentHash, client
     clients.splice(index, 1);
   console.log(clients)
   this.contentToClientMap[contentHash] = clients
-}
-
-function isClientUnresponsive(clientTimestamp){
-  var now = (new Date).getTime()
-  return now - clientTimestamp > UNRESPONSIVE_TIMEOUT
-
 }
 
 /**

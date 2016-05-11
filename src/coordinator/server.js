@@ -23,6 +23,12 @@ function handler (req, res) {
   res.end('Path Hit: ' + req.url);
 }
 
+
+setInterval(function() {
+    coordinator.removeUnresponsiveClients(io)
+  }, HEARTBEATS_PERIOD);
+
+
 // The Coordinator and Client communicate through the following messages:
 //    'initiate': Sent on connection from client. Should add that client's
 //                information to the coordinator state
@@ -70,8 +76,13 @@ io.on('connection', function (socket) {
           console.log('received offer from peer. connectionID is ' + connectionID)
           callback(res)
         });
-    else
-      callback({'success': false})
+    else{
+      var res = {}
+      res['success'] = false
+      res['pid'] = coordinator.lookup(data['contentHash'])
+      res['lookupSuccess'] = (res['pid'] != null)
+      callback(res)
+    }
   });
 
   socket.on('sendIceCandidate', function (data, callback) {
@@ -83,18 +94,6 @@ io.on('connection', function (socket) {
     if (io.sockets.connected[toPeer])
       io.sockets.connected[toPeer].emit(clientListenerName, {'candidate': candidate})
   })
-
-  socket.on('heartbeatReply', heartbeatReply)
 });
 
-setInterval(function() {
-    io.sockets.emit('heartbeat', {})
-    coordinator.removeUnresponsiveClients()
-  }, HEARTBEATS_PERIOD);
 
-function heartbeatReply(data){
-  var clientPID = data['id']
-  var timestamp = data['timestamp']
-  coordinator.setClientTimestamp(clientPID, timestamp)
-
-}

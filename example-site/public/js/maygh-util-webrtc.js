@@ -145,27 +145,22 @@ function sendIceCandidateToPeer(pc, toPeer, connectionID, peerType, event) {
 /**
  * Sends offer to paired peer
  */
-function sendOfferToPeer(pc, toPeer, connectionID, description){
-  console.log('sendOfferToPeer called. connectionID is ' + connectionID)
+function sendOfferToPeer(pc, data, answerError){
+  console.log('sendOfferToPeer called. connectionID is ' + data['connectionID'])
 
+  var description = data['description']
   pc.setLocalDescription(description)
 
-  var data = {
-    'description': description,
-    'toPeer': toPeer,
-    'fromPeer': maygh.socket.id,
-    'connectionID': connectionID
-    }
   maygh.socket.emit('sendOffer', data,
     function (res) {
-      gotAnswer(pc, res)
+      gotAnswer(pc, res, answerError)
     });
 }
 
 /**
  * Callback called when an answer to an offer is received
  */
-function gotAnswer(pc, res) {
+function gotAnswer(pc, res, answerError) {
   console.log("gotAnswerCallback called")
 
   var remoteDescription = res['description']
@@ -176,6 +171,10 @@ function gotAnswer(pc, res) {
     pc.setRemoteDescription(new RTCSessionDescription(remoteDescription))
   else {
     console.log("gotAnswer error")
+    var lookupSuccess = res['lookupSuccess']
+    var pid = res['pid']
+    var data = {'success': lookupSuccess, 'pid': pid}
+    answerError(data)
   }
 
 }

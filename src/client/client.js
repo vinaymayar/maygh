@@ -29,8 +29,6 @@ Maygh.prototype.connect = function() {
 
   this.socket.on('receiveOffer', receiveOfferFromPeer);
 
-  this.socket.on('heartbeat', receiveHeartbeat);
-
   // needs to be listening for offers
   // create a remote peerconnection
   // set up all callbacks
@@ -95,6 +93,7 @@ function loadAndDisplayContent(data, contentHash, src, domElt) {
 
   if (success) {
     console.log("found peer " + pid)
+
     // a uniquely identifying sting for a connection
     // used for listening only to specific receiveIceCandidate events
     var connectionID = generateUID(contentHash)
@@ -108,7 +107,17 @@ function loadAndDisplayContent(data, contentHash, src, domElt) {
     // create an offer from that peer connection
     pc.createOffer(
       function(description) {
-        sendOfferToPeer(pc, pid, connectionID, description)
+        var sendOfferToPeerData = {
+          'description': description,
+          'toPeer': pid,
+          'fromPeer': maygh.socket.id,
+          'connectionID': connectionID,
+          'contentHash': contentHash
+        }
+
+        sendOfferToPeer(pc, sendOfferToPeerData, function(errorData){
+          loadAndDisplayContent(errorData, contentHash, src, domElt)
+        })
       },
       createOfferError)
 
@@ -190,15 +199,6 @@ function setUpReceiveIceCandidateEventListener(pc, uid, peerType) {
     console.log(pc)
   });
 }
-
-function receiveHeartbeat(data) {
-  var timestamp = (new Date()).getTime()
-  var id = maygh.socket.id
-  // console.log('client ' + id + 'received heartbeat at ' + timestamp)
-  var res = {'id': id, 'timestamp': timestamp}
-  maygh.socket.emit('heartbeatReply', res)
-}
-
 
 var maygh = new Maygh();
 maygh.connect()
