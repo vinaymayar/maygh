@@ -95,7 +95,7 @@ Coordinator.prototype.removeClientFromContentHash = function(contentHash, client
  * Returns a random int in [start, end-1]
  */
 function getRandomInt(start, end) {
-  return Math.floor(Math.random() * (end-1)) + start
+  return Math.floor(Math.random() * end) + start
 }
 
 
