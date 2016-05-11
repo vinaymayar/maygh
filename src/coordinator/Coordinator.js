@@ -4,8 +4,6 @@
  * @author: ?
  */
 
-const  UNRESPONSIVE_TIMEOUT = 1000;
-
 function Coordinator() {
   // map from content hashes to lists of client
   // pids that have that content
@@ -24,11 +22,14 @@ function Coordinator() {
 // specified content.
 // Returns null if no client has that content
 Coordinator.prototype.lookup = function(contentHash) {
-  clients = this.contentToClientMap[contentHash]
+  var clients = this.contentToClientMap[contentHash]
+
   if (clients == null || clients.length == 0) {
     return null
   }
-  return clients[0]
+
+  var index = getRandomInt(0, clients.length)
+  return clients[index]
 };
 
 // Adds a client to the clientsInfoMap with given clientInfo.
@@ -57,11 +58,12 @@ Coordinator.prototype.setClientTimestamp = function(clientPID, timestamp) {
   // console.log('received heartbeat ' + timestamp + 'from client ' + clientPID)
 }
 
-Coordinator.prototype.removeUnresponsiveClients = function() {
+Coordinator.prototype.removeUnresponsiveClients = function(io) {
   var clients = Object.keys(this.clientsInfoMap)
   for (i = 0; i < clients.length; i++) {
     var client = clients[i]
-    if (isClientUnresponsive(this.clientsInfoMap[client]))
+    var connected = io.sockets.connected['/#' + client] // '/#' from socket.io convention
+    if (!connected)
       this.removeClient(client)
   }
 }
@@ -70,14 +72,14 @@ Coordinator.prototype.removeClient = function(client){
   var contentHashes = this.clientToContentMap[client]
   if (contentHashes) {
    for (i = 0; i < contentHashes.length; i++) {
-    console.log('removing content hash ' + contentHashes[i])
+    // console.log('removing content hash ' + contentHashes[i])
       this.removeClientFromContentHash(contentHashes[i], client)
     }
   }
   delete this.clientToContentMap[client]
   delete this.clientsInfoMap[client]
 
-  console.log('removed client ' + client)
+  // console.log('removed client ' + client)
 }
 
 Coordinator.prototype.removeClientFromContentHash = function(contentHash, client){
@@ -85,15 +87,18 @@ Coordinator.prototype.removeClientFromContentHash = function(contentHash, client
   var index = clients.indexOf(client);
   if (index > -1)
     clients.splice(index, 1);
-  console.log(clients)
+  // console.log(clients)
   this.contentToClientMap[contentHash] = clients
 }
 
-function isClientUnresponsive(clientTimestamp){
-  var now = (new Date).getTime()
-  return now - clientTimestamp > UNRESPONSIVE_TIMEOUT
-
+/**
+ * Returns a random int in [start, end-1]
+ */
+function getRandomInt(start, end) {
+  return Math.floor(Math.random() * end) + start
 }
+
+
 
 
 exports.Coordinator = Coordinator

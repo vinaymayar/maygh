@@ -5,35 +5,52 @@
  * @return              peer connection
  */
 const CHUNK_LENGTH = 50000; // DONT INCREASE THIS!
+const UNRESPONSIVE_COORDINATOR_TIMEOUT = 100
+const LOAD_FROM_PEER_TIMEOUT = 3000
+const MESSAGE_TIMEOUT = 50
 
-function createLocalPeerConnection(remotePID, connectionID, contentHash, loadContent) {
-    console.log("createLocalConnection")
+function createLocalPeerConnection(remotePID, connectionID, contentHash, loadFromPeer, loadFromSrc, isContentLoaded) {
+  // console.log('createLocalConnection')
 
-    var servers = null
-    var pcConstraints = null
-    var pc = new webkitRTCPeerConnection(servers, pcConstraints);
+  var servers = null
+  var pcConstraints = null
+  var pc = new webkitRTCPeerConnection(servers, pcConstraints);
 
-    var dataChannel = pc.createDataChannel('dataChannel')
-    var contentChunks = [];
+  var dataChannel = pc.createDataChannel('dataChannel')
 
-    dataChannel.onmessage = function(event) {
+  var contentChunks = [];
+  var receivedAllContent = false
 
-        console.log('onmessage in the local connection')
-        reassembleContentChunks(event, contentChunks, loadContent)
+  var establishConnectionTimeout = setTimeout(loadFromSrc, LOAD_FROM_PEER_TIMEOUT)
+
+  var messageTimeout;
+
+
+  dataChannel.onmessage = function(event) {
+    // if content has already been loaded, do nothing
+    if (isContentLoaded()) {
+      return
     }
-    dataChannel.onopen = function () {
-        console.log("DataChannel in local connection opened. Getting content " + contentHash)
-        dataChannel.send(contentHash)
-    }
-    dataChannel.onclose = function () {
-        console.log("Data Channel in local connection closed.")
-    }
+    clearTimeout(messageTimeout)
+    // console.log('onmessage in the local connection.')
+    receivedAllContent = reassembleContentChunks(event, contentChunks, loadFromPeer)
+    if (!receivedAllContent)
+      messageTimeout = setTimeout(loadFromSrc, MESSAGE_TIMEOUT)
 
-    pc.onicecandidate = function(event) {
-        sendIceCandidateToPeer(pc, remotePID, connectionID, 'local', event)
-    }
+  }
 
-    return pc
+  dataChannel.onopen = function () {
+    clearTimeout(establishConnectionTimeout)
+    // console.log('DataChannel in local connection opened. Getting content ' + contentHash)
+    dataChannel.send(contentHash)
+    messageTimeout = setTimeout(loadFromSrc, MESSAGE_TIMEOUT)
+  }
+
+  pc.onicecandidate = function(event) {
+      sendIceCandidateToPeer(pc, remotePID, connectionID, 'local', event)
+  }
+
+  return pc
 }
 
 function onReadContent(dataChannel, text) {
@@ -54,17 +71,20 @@ function onReadContent(dataChannel, text) {
     }, 1)
 }
 
-function reassembleContentChunks(event, contentChunks, loadContent) {
+function reassembleContentChunks(event, contentChunks, loadFromPeer) {
     var data = JSON.parse(event.data);
 
     contentChunks.push(data.message); // pushing chunks in array
 
     if (data.last) {
-        console.log('data.last == true')
+        // console.log('data.last == true')
         var datauri = contentChunks.join('')
-        loadContent(datauri)
+        receivedContent = true
+        loadFromPeer(datauri)
     }
-}
+
+   return data.last
+ }
 
 /**
  * creates a remote webrtc peer connection
@@ -73,7 +93,7 @@ function reassembleContentChunks(event, contentChunks, loadContent) {
  * @return              peer connection
  */
 function createRemotePeerConnection(localPID, connectionID) {
-    console.log("createRemoteConnection")
+    // console.log('createRemoteConnection')
 
     var servers = null
     var pcConstraints = null
@@ -92,31 +112,30 @@ function createRemotePeerConnection(localPID, connectionID) {
  * Set the callbacks for the datachannel in the remote connection
  */
 function setRemoteChannelCallbacks(event) {
-    console.log("setRemoteChannelCallbacks called")
+    // console.log('setRemoteChannelCallbacks called')
 
     var dataChannel = event.channel
     dataChannel.onmessage = function (event) {
         onRemoteMessageCallback(dataChannel, event)
     }
 
-    dataChannel.onopen =  function (){
-        console.log("Data Channel in the remote opened")
+    dataChannel.onopen =  function () {
+        // console.log('Data Channel in the remote opened')
     }
 
     dataChannel.onclose = function () {
-        console.log("Data Channel in the remote closed")
+        // console.log('Data Channel in the remote closed')
     }
 }
 
 function onRemoteMessageCallback(dataChannel, event) {
-    // this is interesting, but not yet
-    console.log('onRemoteMessageCallback called')
-    console.log(event.data)
+    // console.log('onRemoteMessageCallback called')
+    // console.log(event.data)
     var contentHash = event.data
     var content = localStorage.getItem(contentHash)
 
-    console.log('remote sending data to local')
-    console.log('content size ' + content.length)
+    // console.log('remote sending data to local')
+    // console.log('content size ' + content.length)
     onReadContent(dataChannel, content)
 }
 
@@ -124,13 +143,13 @@ function onRemoteMessageCallback(dataChannel, event) {
  * Forwards the candidate to paired peer
  */
 function sendIceCandidateToPeer(pc, toPeer, connectionID, peerType, event) {
-    console.log("got ice candidate")
+    // console.log('got ice candidate')
 
     var eventListenerName = 'receiveIceCandidate-' +
                             getOtherPeerType(peerType) +
                             '-' +
                             connectionID;
-    console.log('send ice candidate on eventListenerName ' + eventListenerName + 'toPeer ' + toPeer)
+    // console.log('send ice candidate on eventListenerName ' + eventListenerName + 'toPeer ' + toPeer)
     if (event.candidate) {
         maygh.socket.emit('sendIceCandidate',
             {
@@ -145,47 +164,47 @@ function sendIceCandidateToPeer(pc, toPeer, connectionID, peerType, event) {
 /**
  * Sends offer to paired peer
  */
-function sendOfferToPeer(pc, toPeer, connectionID, description){
-  console.log('sendOfferToPeer called. connectionID is ' + connectionID)
+function sendOfferToPeer(pc, data, loadFromSrc){
+  // console.log('sendOfferToPeer called. connectionID is ' + data['connectionID'])
 
+  var description = data['description']
   pc.setLocalDescription(description)
 
-  var data = {
-    'description': description,
-    'toPeer': toPeer,
-    'fromPeer': maygh.socket.id,
-    'connectionID': connectionID
-    }
   maygh.socket.emit('sendOffer', data,
     function (res) {
-      gotAnswer(pc, res)
+        gotAnswer(pc, res, loadFromSrc)
     });
 }
 
 /**
  * Callback called when an answer to an offer is received
  */
-function gotAnswer(pc, res) {
-  console.log("gotAnswerCallback called")
+function gotAnswer(pc, res, loadFromSrc) {
+  // console.log('gotAnswerCallback called')
 
   var remoteDescription = res['description']
   var success = res['success']
 
-  console.log(res)
+  // console.log(res)
   if (success)
     pc.setRemoteDescription(new RTCSessionDescription(remoteDescription))
   else {
-    console.log("gotAnswer error")
+    loadFromSrc()
   }
-
 }
 
-
-// Maybe should do something more interesting with these...
-function createAnswerError(error) {
-  console.log('createAnswerError: ' + error)
+function createAnswerSuccess(pc, description, callback) {
+  // console.log('createAnswerSuccess')
+  pc.setLocalDescription(description)
+  callback({'description': description, 'success': true})
 }
 
-function createOfferError(error) {
-  console.log("createOfferError: " + error)
+function createAnswerError(error, callback) {
+  // console.log('createAnswerError: ' + error)
+  callback({'success': false})
+}
+
+// Don't know exactly what are the implications of this
+function addIceCandidateError(error) {
+  // console.log('addIceCandidateError: ' + error)
 }
