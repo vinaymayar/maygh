@@ -6,39 +6,66 @@
  */
 const CHUNK_LENGTH = 50000; // DONT INCREASE THIS!
 const UNRESPONSIVE_COORDINATOR_TIMEOUT = 100
-const DATACHANNEL_OPEN_TIMEOUT = 500
+const LOAD_FROM_PEER_TIMEOUT = 3000
+const MESSAGE_TIMEOUT = 50
 
-function createLocalPeerConnection(remotePID, connectionID, contentHash, loadContent) {
-    console.log('createLocalConnection')
+function createLocalPeerConnection(remotePID, domElt, connectionID, contentHash, loadFromPeer, loadFromSrc, isContentLoaded) {
+  console.log('createLocalConnection')
 
-    var servers = null
-    var pcConstraints = null
-    var pc = new webkitRTCPeerConnection(servers, pcConstraints);
+  var servers = null
+  var pcConstraints = null
+  var pc = new webkitRTCPeerConnection(servers, pcConstraints);
 
-    var dataChannel = pc.createDataChannel('dataChannel')
-    var contentChunks = [];
-    var receivedAllContent = false
+  var dataChannel = pc.createDataChannel('dataChannel')
 
-    dataChannel.onmessage = function(event) {
-        console.log('onmessage in the local connection')
-        receivedAllContent = reassembleContentChunks(event, contentChunks, loadContent)
+  var contentChunks = [];
+  var receivedAllContent = false
+
+  var establishConnectionTimeout = setTimeout(function(){
+    console.log('establishConnection timeout')
+    loadFromSrc()
+  }, LOAD_FROM_PEER_TIMEOUT)
+
+  var messageTimeout;
+
+
+  dataChannel.onmessage = function(event) {
+    if (isContentLoaded()) {
+      return
     }
-    dataChannel.onopen = function () {
-        console.log('DataChannel in local connection opened. Getting content ' + contentHash)
-        dataChannel.send(contentHash)
-    }
-    dataChannel.onclose = function () {
-        if (!receivedAllContent)
-            console.log('Data channel for '+ contentHash + ' closed during file transfer')
-        else
-            console.log('Data channel for '+ contentHash + ' closed after file transfer')
-    }
+    clearTimeout(messageTimeout)
+    console.log('onmessage in the local connection.')
+    receivedAllContent = reassembleContentChunks(event, contentChunks, loadFromPeer)
+    if (!receivedAllContent)
+      messageTimeout = setTimeout(function(){
+        console.log('message timeout')
+        loadFromSrc()
+      }, MESSAGE_TIMEOUT)
 
-    pc.onicecandidate = function(event) {
-        sendIceCandidateToPeer(pc, remotePID, connectionID, 'local', event)
-    }
+  }
 
-    return pc
+  dataChannel.onopen = function () {
+    clearTimeout(establishConnectionTimeout)
+    console.log('DataChannel in local connection opened. Getting content ' + contentHash)
+    dataChannel.send(contentHash)
+    messageTimeout = setTimeout(function(){
+        console.log('message timeout')
+        loadFromSrc()
+      }, MESSAGE_TIMEOUT)
+  }
+
+  dataChannel.onclose = function () {
+    if (!receivedAllContent)
+        console.log('Data channel for '+ contentHash + ' closed during file transfer')
+    else
+        console.log('Data channel for '+ contentHash + ' closed after file transfer')
+  }
+
+  pc.onicecandidate = function(event) {
+      sendIceCandidateToPeer(pc, remotePID, connectionID, 'local', event)
+  }
+
+  return pc
 }
 
 function onReadContent(dataChannel, text) {
@@ -59,7 +86,7 @@ function onReadContent(dataChannel, text) {
     }, 1)
 }
 
-function reassembleContentChunks(event, contentChunks, loadContent) {
+function reassembleContentChunks(event, contentChunks, loadFromPeer) {
     var data = JSON.parse(event.data);
 
     contentChunks.push(data.message); // pushing chunks in array
@@ -68,11 +95,11 @@ function reassembleContentChunks(event, contentChunks, loadContent) {
         console.log('data.last == true')
         var datauri = contentChunks.join('')
         receivedContent = true
-        loadContent(datauri)
+        loadFromPeer(datauri)
     }
 
-    return data.last
-}
+   return data.last
+ }
 
 /**
  * creates a remote webrtc peer connection
@@ -152,25 +179,22 @@ function sendIceCandidateToPeer(pc, toPeer, connectionID, peerType, event) {
 /**
  * Sends offer to paired peer
  */
-function sendOfferToPeer(pc, data, handshakeError){
+function sendOfferToPeer(pc, data, loadFromSrc){
   console.log('sendOfferToPeer called. connectionID is ' + data['connectionID'])
 
   var description = data['description']
   pc.setLocalDescription(description)
 
-  var timeout = setTimeout(handshakeError, UNRESPONSIVE_COORDINATOR_TIMEOUT);
-
   maygh.socket.emit('sendOffer', data,
     function (res) {
-        clearTimeout(timeout)
-        gotAnswer(pc, res, handshakeError)
+        gotAnswer(pc, res, loadFromSrc)
     });
 }
 
 /**
  * Callback called when an answer to an offer is received
  */
-function gotAnswer(pc, res, handshakeError) {
+function gotAnswer(pc, res, loadFromSrc) {
   console.log('gotAnswerCallback called')
 
   var remoteDescription = res['description']
@@ -180,11 +204,10 @@ function gotAnswer(pc, res, handshakeError) {
   if (success)
     pc.setRemoteDescription(new RTCSessionDescription(remoteDescription))
   else {
-    handshakeError()
+    loadFromSrc()
   }
 
 }
-
 
 function createAnswerSuccess(pc, description, callback) {
   console.log('createAnswerSuccess')

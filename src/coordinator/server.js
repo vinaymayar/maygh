@@ -13,8 +13,6 @@ var io = require('socket.io')(app);
 var fs = require('fs');
 var COORDINATOR_PORT = 8000;
 const  HEARTBEATS_PERIOD = 50;
-const  UNRESPONSIVE_PEER_TIMEOUT = 50
-
 
 // Starts a new coordinator
 var coordinator = new Coordinator()
@@ -69,18 +67,15 @@ io.on('connection', function (socket) {
     var description = data['description']
     var connectionID = data['connectionID']
 
-    var timeout = setTimeout(function (){
-      callback({'success': false})
-    }, UNRESPONSIVE_PEER_TIMEOUT);
-
     if (io.sockets.connected[toPeer])
       io.sockets.connected[toPeer].emit('receiveOffer',
         {'description': description, 'fromPeer': fromPeer, 'connectionID': connectionID },
         function (res) {
-          clearTimeout(timeout)
           console.log('received offer from peer. connectionID is ' + connectionID)
           callback(res)
         });
+    else
+      callback({'success': false})
   });
 
   socket.on('sendIceCandidate', function (data, callback) {

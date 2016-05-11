@@ -100,7 +100,13 @@ function loadAndDisplayContent(data, contentHash, src, domElt) {
     var connectionID = generateUID(contentHash)
 
     // create peerconnection and set up some callbacks
-    var pc = createLocalPeerConnection(pid, connectionID, contentHash, verifyAndDisplayContent(domElt, contentHash, src))
+    var pc = createLocalPeerConnection(pid, connectionID, contentHash, verifyAndDisplayContent(domElt, contentHash, src),
+     function() {
+        loadFromSrc(contentHash, src, domElt)
+      },
+      function() {
+        return domElt.src
+      })
 
     // sets up the event listener for ice candidate events
     setUpReceiveIceCandidateEventListener(pc, connectionID, 'local')
@@ -126,8 +132,14 @@ function loadAndDisplayContent(data, contentHash, src, domElt) {
   }
 }
 
+
 function verifyAndDisplayContent(domElt, contentHash, src) {
   return function(content) {
+    // if element is already loaded
+    if (domElt.src){
+      console.log('loadFromPeer: content already loaded')
+      return
+    }
     // verifying content hash first
     if (verifyContentHash(content, contentHash)) {
       domElt.src = content
@@ -153,6 +165,12 @@ function verifyContentHash(content, contentHash) {
  * Loads content from origin and displays it in the appropriate dom element
 */
 function loadFromSrc(contentHash, src, domElt) {
+  // if element is already loaded
+  if (isLoaded(domElt)){
+    console.log('loadFromSrc: content already loaded')
+    return
+  }
+
   console.log("loaded contents from source")
   // Makes a GET request to src and grabs the data
   var xmlHttp = new XMLHttpRequest()
