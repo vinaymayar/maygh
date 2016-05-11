@@ -16,6 +16,14 @@ The options are
 * bin/chromedriver_linux64
 * bin/chromedriver_win32.exe
 
+Make sure no instances of the server or coordinator are already running on
+ports 8000 and 8080:
+
+`pkill -f node`
+
 Run tests:
 
-`nightwatch --env chrome,chrome`
+```
+cd ./test
+./run_tests.sh
+```
