@@ -6,6 +6,7 @@
  */
 const CHUNK_LENGTH = 50000; // DONT INCREASE THIS!
 const UNRESPONSIVE_COORDINATOR_TIMEOUT = 100
+const DATACHANNEL_OPEN_TIMEOUT = 500
 
 function createLocalPeerConnection(remotePID, connectionID, contentHash, loadContent) {
     console.log('createLocalConnection')
@@ -151,25 +152,25 @@ function sendIceCandidateToPeer(pc, toPeer, connectionID, peerType, event) {
 /**
  * Sends offer to paired peer
  */
-function sendOfferToPeer(pc, data, unresponsivePeerError, unresponsiveCoordinatorError){
+function sendOfferToPeer(pc, data, handshakeError){
   console.log('sendOfferToPeer called. connectionID is ' + data['connectionID'])
 
   var description = data['description']
   pc.setLocalDescription(description)
 
-  var timeout = setTimeout(unresponsiveCoordinatorError, UNRESPONSIVE_COORDINATOR_TIMEOUT);
+  var timeout = setTimeout(handshakeError, UNRESPONSIVE_COORDINATOR_TIMEOUT);
 
   maygh.socket.emit('sendOffer', data,
     function (res) {
         clearTimeout(timeout)
-        gotAnswer(pc, res, unresponsivePeerError)
+        gotAnswer(pc, res, handshakeError)
     });
 }
 
 /**
  * Callback called when an answer to an offer is received
  */
-function gotAnswer(pc, res, unresponsivePeerError) {
+function gotAnswer(pc, res, handshakeError) {
   console.log('gotAnswerCallback called')
 
   var remoteDescription = res['description']
@@ -179,21 +180,28 @@ function gotAnswer(pc, res, unresponsivePeerError) {
   if (success)
     pc.setRemoteDescription(new RTCSessionDescription(remoteDescription))
   else {
-    console.log('gotAnswer error')
-    var lookupSuccess = res['lookupSuccess']
-    var pid = res['pid']
-    var data = {'success': lookupSuccess, 'pid': pid}
-    unresponsivePeerError(data)
+    handshakeError()
   }
 
 }
 
 
-// Maybe should do something more interesting with these...
-function createAnswerError(error) {
-  console.log('createAnswerError: ' + error)
+function createAnswerSuccess(pc, description, callback) {
+  console.log('createAnswerSuccess')
+  pc.setLocalDescription(description)
+  callback({'description': description, 'success': true})
 }
+// Maybe should do something more interesting with these...
+function createAnswerError(error, callback) {
+  console.log('createAnswerError: ' + error)
+  callback({'success': false})
+}
+
 
 function createOfferError(error) {
   console.log('createOfferError: ' + error)
+}
+
+function addIceCandidateError(error) {
+  console.log('addIceCandidateError: ' + error)
 }

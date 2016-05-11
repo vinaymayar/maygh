@@ -69,22 +69,15 @@ io.on('connection', function (socket) {
     var description = data['description']
     var connectionID = data['connectionID']
 
-    var unresponsivePeerError = function () {
-      var res = {}
-      res['success'] = false
-      res['pid'] = coordinator.lookup(data['contentHash'])
-      res['lookupSuccess'] = (res['pid'] != null)
-      callback(res)
-    }
-
-    var timeout = setTimeout(unresponsivePeerError, UNRESPONSIVE_PEER_TIMEOUT);
+    var timeout = setTimeout(function (){
+      callback({'success': false})
+    }, UNRESPONSIVE_PEER_TIMEOUT);
 
     if (io.sockets.connected[toPeer])
       io.sockets.connected[toPeer].emit('receiveOffer',
         {'description': description, 'fromPeer': fromPeer, 'connectionID': connectionID },
         function (res) {
           clearTimeout(timeout)
-          res['success'] = true
           console.log('received offer from peer. connectionID is ' + connectionID)
           callback(res)
         });

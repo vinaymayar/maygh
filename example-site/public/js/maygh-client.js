@@ -49,10 +49,11 @@ function receiveOfferFromPeer(data, callback) {
 
   pc.createAnswer(
     function(description) {
-      pc.setLocalDescription(description)
-      callback({'description': description})
+      createAnswerSuccess(pc, description, callback)
     },
-    createAnswerError
+    function(error) {
+      createAnswerError(error, callback)
+    }
   );
 }
 
@@ -104,15 +105,6 @@ function loadAndDisplayContent(data, contentHash, src, domElt) {
     // sets up the event listener for ice candidate events
     setUpReceiveIceCandidateEventListener(pc, connectionID, 'local')
 
-    var unresponsiveCoordinatorError = function(){
-            console.log('coordinator was unresponsive, load form source')
-            loadFromSrc(contentHash, src, domElt)
-          }
-    var unresponsivePeerError = function(errorData){
-            console.log('peer was unresponsive, retry with different peer')
-            loadAndDisplayContent(errorData, contentHash, src, domElt)
-          }
-
     // create an offer from that peer connection
     pc.createOffer(
       function(description) {
@@ -121,20 +113,16 @@ function loadAndDisplayContent(data, contentHash, src, domElt) {
           'toPeer': pid,
           'fromPeer': maygh.socket.id,
           'connectionID': connectionID,
-          'contentHash': contentHash
         }
 
-        sendOfferToPeer(pc, sendOfferToPeerData, unresponsivePeerError,unresponsiveCoordinatorError)
+        sendOfferToPeer(pc, sendOfferToPeerData, function () {
+          loadFromSrc(contentHash, src, domElt)
+        })
       },
       createOfferError)
 
   } else {
     loadFromSrc(contentHash, src, domElt)
-
-    // sends a update message telling the server, we have the element
-    // in out local storage
-    maygh.socket.emit('update',
-      {'contentHash': contentHash, 'pid': maygh.socket.id})
   }
 }
 
@@ -184,6 +172,10 @@ function loadFromSrc(contentHash, src, domElt) {
       localStorage.setItem(contentHash, datauri);
       domElt.src = datauri
       domElt.setAttribute('data-source', 'server')
+
+      // sends a update message telling the server, we have the element
+      // in out local storage
+      maygh.socket.emit('update', {'contentHash': contentHash, 'pid': maygh.socket.id})
     }
   };
 
@@ -201,7 +193,7 @@ function setUpReceiveIceCandidateEventListener(pc, uid, peerType) {
   maygh.socket.on(eventListenerName, function (data) {
     var candidate = data['candidate']
     // add the ice candidate that was received to the connection
-    pc.addIceCandidate(new RTCIceCandidate(candidate))
+    pc.addIceCandidate(new RTCIceCandidate(candidate), function(){}, addIceCandidateError)
     console.log("client got an ice candidate from eventListenerName " + eventListenerName)
     console.log(pc)
   });
