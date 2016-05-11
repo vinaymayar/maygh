@@ -128,11 +128,11 @@ function verifyAndDisplayContent(domElt, contentHash, src) {
     // verifying content hash first
     if (verifyContentHash(content, contentHash)) {
       domElt.src = content
+      domElt.setAttribute('data-source', 'peer')
       localStorage.setItem(contentHash, content)
       maygh.socket.emit('update',
         {'contentHash': contentHash, 'pid': maygh.socket.id})
     } else { // load from src if didn't match
-      // TODO: change this to try to call load again??
       console.log("content hash didn't match. loading from src...")
       loadFromSrc(contentHash, src, domElt)
     }
@@ -167,6 +167,7 @@ function loadFromSrc(contentHash, src, domElt) {
       var datauri = 'data:' + mime + ';base64,' + b64;
       localStorage.setItem(contentHash, datauri);
       domElt.src = datauri
+      domElt.setAttribute('data-source', 'server')
     }
   };
 
