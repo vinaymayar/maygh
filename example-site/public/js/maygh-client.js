@@ -100,7 +100,7 @@ function loadAndDisplayContent(data, contentHash, src, domElt) {
     var connectionID = generateUID(contentHash)
 
     // create peerconnection and set up some callbacks
-    var pc = createLocalPeerConnection(pid, connectionID, contentHash, displayContent(domElt, contentHash))
+    var pc = createLocalPeerConnection(pid, connectionID, contentHash, verifyAndDisplayContent(domElt, contentHash, src))
 
     // sets up the event listener for ice candidate events
     setUpReceiveIceCandidateEventListener(pc, connectionID, 'local')
@@ -123,16 +123,27 @@ function loadAndDisplayContent(data, contentHash, src, domElt) {
   }
 }
 
-
-function displayContent(domElt, contentHash) {
+function verifyAndDisplayContent(domElt, contentHash, src) {
   return function(content) {
-    console.log("displaying content from a peer!!!")
-    console.log(content.slice(0, 1000))
-    domElt.src = content
-    localStorage.setItem(contentHash, content)
-    maygh.socket.emit('update',
-      {'contentHash': contentHash, 'pid': maygh.socket.id})
+    // verifying content hash first
+    if (verifyContentHash(content, contentHash)) {
+      domElt.src = content
+      localStorage.setItem(contentHash, content)
+      maygh.socket.emit('update',
+        {'contentHash': contentHash, 'pid': maygh.socket.id})
+    } else { // load from src if didn't match
+      // TODO: change this to try to call load again??
+      console.log("content hash didn't match. loading from src...")
+      loadFromSrc(contentHash, src, domElt)
+    }
   }
+}
+
+/**
+ * Returns true if content hash matched, false otherwise.
+*/
+function verifyContentHash(content, contentHash) {
+  return contentHash === Sha1.hash(content)
 }
 
 /**
@@ -147,7 +158,7 @@ function loadFromSrc(contentHash, src, domElt) {
   // Asynchronous request
   xmlHttp.onreadystatechange = function (e) {
     if (xmlHttp.readyState == 4 && xmlHttp.status == 200){
-      console.log("Callback was called")
+      console.log("Callback was called... loading from src for contentHash: " + contentHash)
 
       var arr = new Uint8Array(this.response);
       var b64 = encodeBase64(arr)
