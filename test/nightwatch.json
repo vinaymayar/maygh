@@ -2,7 +2,8 @@
   "src_folders" : ["./tests"],
   "output_folder" : "./results",
   "live_output" : true,
-  "parallel_process_delay" : 1500,
+  "parallel_process_delay" : 1000,
+  "test_workers" : false,
 
   "selenium" : {
     "start_process" : true,
