@@ -38,12 +38,12 @@ io.on('connection', function (socket) {
 
   socket.on('initiate', function (data) {
     var clientPID = data['pid']
-    console.log("client connected " + clientPID)
+    // console.log("client connected " + clientPID)
     coordinator.addClient(clientPID)
   });
 
   socket.on('lookup', function (data, callback) {
-    console.log("Server received lookup message")
+    // console.log("Server received lookup message")
     var res = {}
 
     res['pid'] = coordinator.lookup(data['contentHash'])
@@ -53,12 +53,12 @@ io.on('connection', function (socket) {
   });
 
   socket.on('update', function (data) {
-    console.log("Server received update message")
+    // console.log("Server received update message")
 
     var contentHash = data['contentHash']
     var pid = data['pid']
     coordinator.addContentHashToClient(contentHash, pid)
-    console.log(coordinator.contentToClientMap)
+    // console.log(coordinator.contentToClientMap)
   });
 
   socket.on('sendOffer', function (data, callback) {
@@ -71,7 +71,7 @@ io.on('connection', function (socket) {
       io.sockets.connected[toPeer].emit('receiveOffer',
         {'description': description, 'fromPeer': fromPeer, 'connectionID': connectionID },
         function (res) {
-          console.log('received offer from peer. connectionID is ' + connectionID)
+          // console.log('received offer from peer. connectionID is ' + connectionID)
           callback(res)
         });
     else
@@ -82,7 +82,7 @@ io.on('connection', function (socket) {
     var candidate = data['candidate']
     var toPeer = '/#' + data['toPeer']
     var clientListenerName = data['clientIceCandidateEventListenerName']
-    console.log("sendingIceCandidate in the server with clientListenerName " + clientListenerName)
+    // console.log("sendingIceCandidate in the server with clientListenerName " + clientListenerName)
 
     if (io.sockets.connected[toPeer])
       io.sockets.connected[toPeer].emit(clientListenerName, {'candidate': candidate})

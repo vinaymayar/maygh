@@ -72,14 +72,14 @@ Coordinator.prototype.removeClient = function(client){
   var contentHashes = this.clientToContentMap[client]
   if (contentHashes) {
    for (i = 0; i < contentHashes.length; i++) {
-    console.log('removing content hash ' + contentHashes[i])
+    // console.log('removing content hash ' + contentHashes[i])
       this.removeClientFromContentHash(contentHashes[i], client)
     }
   }
   delete this.clientToContentMap[client]
   delete this.clientsInfoMap[client]
 
-  console.log('removed client ' + client)
+  // console.log('removed client ' + client)
 }
 
 Coordinator.prototype.removeClientFromContentHash = function(contentHash, client){
@@ -87,7 +87,7 @@ Coordinator.prototype.removeClientFromContentHash = function(contentHash, client
   var index = clients.indexOf(client);
   if (index > -1)
     clients.splice(index, 1);
-  console.log(clients)
+  // console.log(clients)
   this.contentToClientMap[contentHash] = clients
 }
 
