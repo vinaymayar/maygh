@@ -67,6 +67,8 @@ Maygh.prototype.load = function(contentHash, id, src) {
   if(content != null) {
     setDomEltContent(domElt, content);
     domElt.setAttribute('data-source', 'local');
+    maygh.socket.emit('update',
+        {'contentHash': contentHash, 'pid': maygh.socket.id});
     return;
   }
 
