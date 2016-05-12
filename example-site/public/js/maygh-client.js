@@ -62,6 +62,13 @@ Maygh.prototype.load = function(contentHash, id, src) {
   console.log("called load");
   var domElt = document.getElementById(id);
 
+  // check if content is already in local storage
+  var content = localStorage.getItem(contentHash);
+  if(content != null) {
+    setDomEltContent(domElt, content);
+    return;
+  }
+
   // look up the content w/ coordinator and then save to local storage
   var lookupTimeout = setTimeout(function() {
     loadFromSrc(contentHash, src, domElt);
