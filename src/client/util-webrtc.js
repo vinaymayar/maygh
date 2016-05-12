@@ -1,7 +1,5 @@
 const CHUNK_LENGTH = 50000; // DONT INCREASE THIS!
-const UNRESPONSIVE_COORDINATOR_TIMEOUT = 100;
-const LOAD_FROM_PEER_TIMEOUT = 3000;
-const MESSAGE_TIMEOUT = 50;
+const TIMEOUT = 2000;
 
 /**
  * creates a local webrtc peer connection
@@ -21,10 +19,14 @@ function createLocalPeerConnection(remotePID, connectionID, contentHash, loadFro
   var contentChunks = [];
   var receivedAllContent = false;
 
-  var establishConnectionTimeout = setTimeout(loadFromSrc, LOAD_FROM_PEER_TIMEOUT);
+  var loadFromSrcAndClosePC = function() {
+    loadFromSrc();
+    pc.close();
+  };
+
+  var establishConnectionTimeout = setTimeout(loadFromSrcAndClosePC, TIMEOUT);
 
   var messageTimeout;
-
 
   dataChannel.onmessage = function(event) {
     // if content has already been loaded, do nothing
@@ -32,18 +34,24 @@ function createLocalPeerConnection(remotePID, connectionID, contentHash, loadFro
       return;
     }
     clearTimeout(messageTimeout);
-    // console.log('onmessage in the local connection.')
+    console.log('onmessage in the local connection.')
     receivedAllContent = reassembleContentChunks(event, contentChunks, loadFromPeer);
     if (!receivedAllContent)
-      messageTimeout = setTimeout(loadFromSrc, MESSAGE_TIMEOUT);
-
+      messageTimeout = setTimeout(loadFromSrcAndClosePC, TIMEOUT);
+    else
+      pc.close();
   }
 
   dataChannel.onopen = function () {
     clearTimeout(establishConnectionTimeout);
     // console.log('DataChannel in local connection opened. Getting content ' + contentHash)
     dataChannel.send(contentHash);
-    messageTimeout = setTimeout(loadFromSrc, MESSAGE_TIMEOUT);
+    messageTimeout = setTimeout(loadFromSrcAndClosePC, TIMEOUT);
+  };
+
+  dataChannel.onclose = function () {
+    if (pc.signalingState != 'closed')
+      pc.close();
   };
 
   pc.onicecandidate = function(event) {
@@ -74,19 +82,19 @@ function onReadContent(dataChannel, text) {
 }
 
 function reassembleContentChunks(event, contentChunks, loadFromPeer) {
-    var data = JSON.parse(event.data);
+  var data = JSON.parse(event.data);
 
-    contentChunks.push(data.message); // pushing chunks in array
+  contentChunks.push(data.message); // pushing chunks in array
 
-    if (data.last) {
-        // console.log('data.last == true')
-        var datauri = contentChunks.join('');
-        receivedContent = true;
-        loadFromPeer(datauri);
-    }
+  if (data.last) {
+      // console.log('data.last == true')
+      var datauri = contentChunks.join('');
+      receivedContent = true;
+      loadFromPeer(datauri);
+  }
 
-   return data.last;
- }
+  return data.last;
+}
 
 /**
  * creates a remote webrtc peer connection
@@ -95,38 +103,43 @@ function reassembleContentChunks(event, contentChunks, loadFromPeer) {
  * @return              peer connection
  */
 function createRemotePeerConnection(localPID, connectionID) {
-    // console.log('createRemoteConnection')
+  // console.log('createRemoteConnection')
 
-    var servers = null;
-    var pcConstraints = null;
-    var pc = new webkitRTCPeerConnection(servers, pcConstraints);
+  var servers = null;
+  var pcConstraints = null;
+  var pc = new webkitRTCPeerConnection(servers, pcConstraints);
 
-    pc.ondatachannel = setRemoteChannelCallbacks;
+  var closePeerTimeout = setTimeout(function() {
+    pc.close();
+  }, TIMEOUT);
 
-    pc.onicecandidate = function(event) {
-        sendIceCandidateToPeer(pc, localPID, connectionID, 'remote', event);
-    }
+  pc.ondatachannel = function(event){
+    clearTimeout(closePeerTimeout)
+    setRemoteChannelCallbacks(pc, event);
+  };
 
-    return pc;
+  pc.onicecandidate = function(event) {
+      sendIceCandidateToPeer(pc, localPID, connectionID, 'remote', event);
+  };
+
+  return pc;
 }
 /**
  * Set the callbacks for the datachannel in the remote connection
  */
-function setRemoteChannelCallbacks(event) {
-    // console.log('setRemoteChannelCallbacks called')
+function setRemoteChannelCallbacks(pc, event) {
+  // console.log('setRemoteChannelCallbacks called')
 
-    var dataChannel = event.channel;
-    dataChannel.onmessage = function (event) {
-        onRemoteMessageCallback(dataChannel, event);
-    };
+  var dataChannel = event.channel;
+  dataChannel.onmessage = function(event) {
+      onRemoteMessageCallback(dataChannel, event);
+  };
 
-    dataChannel.onopen =  function () {
-        // console.log('Data Channel in the remote opened')
-    }
-
-    dataChannel.onclose = function () {
-        // console.log('Data Channel in the remote closed')
-    }
+  dataChannel.onclose = function() {
+    if (pc.signalingState != 'closed')
+      pc.close();
+    // console.log('Data Channel in the remote closed')
+  }
 }
 
 function onRemoteMessageCallback(dataChannel, event) {
@@ -183,25 +196,26 @@ function sendOfferToPeer(pc, data, loadFromSrc){
 function gotAnswer(pc, res, loadFromSrc) {
   // console.log('gotAnswerCallback called')
 
-  var remoteDescription = res['description']
-  var success = res['success']
+  var remoteDescription = res['description'];
+  var success = res['success'];
 
   // console.log(res)
   if (success)
-    pc.setRemoteDescription(new RTCSessionDescription(remoteDescription))
+    pc.setRemoteDescription(new RTCSessionDescription(remoteDescription));
   else {
-    loadFromSrc()
+    loadFromSrc();
   }
 }
 
 function createAnswerSuccess(pc, description, callback) {
   // console.log('createAnswerSuccess')
-  pc.setLocalDescription(description)
-  callback({'description': description, 'success': true})
+  pc.setLocalDescription(description);
+  callback({'description': description, 'success': true});
 }
 
-function createAnswerError(error, callback) {
+function createAnswerError(pc, error, callback) {
   // console.log('createAnswerError: ' + error)
+  pc.close();
   callback({'success': false})
 }
 
