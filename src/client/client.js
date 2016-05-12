@@ -185,8 +185,6 @@ function loadFromSrc(contentHash, src, domElt) {
       localStorage.setItem(contentHash, datauri);
       setDomEltContent(domElt, datauri);
       domElt.setAttribute('data-source', 'server');
-      console.log("HASH IS");
-      console.log(Sha1.hash(datauri));
 
       // sends a update message telling the server, we have the element
       // in out local storage

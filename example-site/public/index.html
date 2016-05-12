@@ -10,21 +10,24 @@
     <script src="js/maygh-util-sha1.js"></script>
     <script src="js/maygh-util-webrtc.js"></script>
     <script src="js/maygh-client.js"></script>
+
+    <script id="hello-world"></script>
+
     <link rel="stylesheet" id="styles">
+
     <script type="text/javascript">
-      maygh.load("119e294567462e13faa0000ab8df22441d91f5f2", "styles", "css/style.css");
+      maygh.load("47e6e46cfaf2c7be43e98f3fafe18cbb6a39e8ac", "hello-world", "js/hello-world.js");
+      maygh.load("b33145e33f6c2fb410b89cfbb9cf5355c8be15cb", "styles", "css/style.css");
     </script>
   </head>
   <body>
     <div class="info">This webpage was partially loaded from peers by Maygh!</div>
     <img alt="image" id="image1">
+    <img alt="image" id="image2">
+
     <script type="text/javascript">
       maygh.load("824e4df3495213386844c0b2d6e781c6dd264697", "image1", "images/Bugs_Bunny.png");
-    </script>
-    <img alt="image" id="image2">
-    <script type="text/javascript">
       maygh.load("119e294567462e13faa0000ab8df22441d91f5f2", "image2", "images/image.png");
     </script>
-
   </body>
 </html>
