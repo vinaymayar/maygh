@@ -50,14 +50,15 @@ io.on('connection', function (socket) {
     // console.log("Server received update message")
 
     var contentHash = data['contentHash']
-    var pid = data['pid']
+    var pid = socket.id.substring(2)
+    console.log("Coordinator received update message from " + pid + " for content hash " + contentHash);
     coordinator.addContentHashToClient(contentHash, pid)
     // console.log(coordinator.contentToClientMap)
   });
 
   socket.on('sendOffer', function (data, callback) {
     var toPeer = '/#' + data['toPeer'] // socket.io convention
-    var fromPeer = data['fromPeer']
+    var fromPeer = socket.id.substring(2)
     var description = data['description']
     var connectionID = data['connectionID']
 

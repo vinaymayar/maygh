@@ -62,7 +62,7 @@ Maygh.prototype.load = function(contentHash, id, src) {
     setDomEltContent(domElt, content);
     domElt.setAttribute('data-source', 'local');
     this.socket.emit('update',
-        {'contentHash': contentHash, 'pid': maygh.socket.id});
+        {'contentHash': contentHash});
     return;
   }
 
@@ -114,7 +114,6 @@ function loadAndDisplayContent(data, contentHash, src, domElt) {
         var sendOfferToPeerData = {
           'description': description,
           'toPeer': pid,
-          'fromPeer': maygh.socket.id,
           'connectionID': connectionID,
         };
 
@@ -144,7 +143,7 @@ function verifyAndDisplayContent(domElt, contentHash, src) {
       domElt.setAttribute('data-source', 'peer');
       localStorage.setItem(contentHash, content);
       maygh.socket.emit('update',
-        {'contentHash': contentHash, 'pid': maygh.socket.id});
+        {'contentHash': contentHash});
       console.log('loaded content' + contentHash + ' from peer');
     } else { // load from src if didn't match
       // console.log("content hash didn't match. loading from src...");
@@ -193,7 +192,7 @@ function loadFromSrc(contentHash, src, domElt) {
       // sends a update message telling the server, we have the element
       // in out local storage
       console.log('loaded content' + contentHash + ' from source');
-      maygh.socket.emit('update', {'contentHash': contentHash, 'pid': maygh.socket.id});
+      maygh.socket.emit('update', {'contentHash': contentHash});
     }
   };
 

@@ -52,7 +52,7 @@ Coordinator.prototype.setClientTimestamp = function(clientPID, timestamp) {
 }
 
 Coordinator.prototype.removeUnresponsiveClients = function(io) {
-  var clients = Object.keys(this.clientsInfoMap)
+  var clients = Object.keys(this.clientToContentMap)
   for (i = 0; i < clients.length; i++) {
     var client = clients[i]
     var connected = io.sockets.connected['/#' + client] // '/#' from socket.io convention
