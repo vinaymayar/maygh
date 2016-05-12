@@ -23,7 +23,7 @@ module.exports = new (function() {
           localStorage.setItem('824e4df3495213386844c0b2d6e781c6dd264697', 'fake-content1')
           localStorage.setItem('119e294567462e13faa0000ab8df22441d91f5f2', 'fake-content2')
           localStorage.setItem('47e6e46cfaf2c7be43e98f3fafe18cbb6a39e8ac', 'fake-content3')
-          localStorage.setItem('b33145e33f6c2fb410b89cfbb9cf5355c8be15cb', 'fake-content4')
+          localStorage.setItem('c36af63c63694cea28870752c197b6fe80a6fb15', 'fake-content4')
         })
         .pause(10000);
     };
