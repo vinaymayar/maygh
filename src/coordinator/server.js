@@ -51,7 +51,7 @@ io.on('connection', function (socket) {
 
     var contentHash = data['contentHash']
     var pid = socket.id.substring(2)
-    console.log("Coordinator received update message from " + pid + " for content hash " + contentHash);
+    // console.log("Coordinator received update message from " + pid + " for content hash " + contentHash);
     coordinator.addContentHashToClient(contentHash, pid)
     // console.log(coordinator.contentToClientMap)
   });

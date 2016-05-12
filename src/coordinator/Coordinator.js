@@ -12,10 +12,6 @@ function Coordinator() {
   // map from client pids to lists of
   // content hashes stored by that client
   this.clientToContentMap = {};
-  // map from client pids to dictionary of information
-  // about that client
-  // Ex: {1: {IP: 18.xxx.xxx.xxx, etc.}}
-  this.clientsInfoMap = {};
 }
 
 // Looks up and returns a client that has the
@@ -46,11 +42,6 @@ Coordinator.prototype.addContentHashToClient = function (contentHash, client) {
   this.clientToContentMap[client].push(contentHash)
 }
 
-Coordinator.prototype.setClientTimestamp = function(clientPID, timestamp) {
-  this.clientsInfoMap[clientPID] = timestamp
-  // console.log('received heartbeat ' + timestamp + 'from client ' + clientPID)
-}
-
 Coordinator.prototype.removeUnresponsiveClients = function(io) {
   var clients = Object.keys(this.clientToContentMap)
   for (i = 0; i < clients.length; i++) {
@@ -63,16 +54,14 @@ Coordinator.prototype.removeUnresponsiveClients = function(io) {
 
 Coordinator.prototype.removeClient = function(client){
   var contentHashes = this.clientToContentMap[client]
+  delete this.clientToContentMap[client]
+
   if (contentHashes) {
-   for (i = 0; i < contentHashes.length; i++) {
-    // console.log('removing content hash ' + contentHashes[i])
+    for (i = 0; i < contentHashes.length; i++) {
+      // console.log('removing content hash ' + contentHashes[i])
       this.removeClientFromContentHash(contentHashes[i], client)
     }
   }
-  delete this.clientToContentMap[client]
-  delete this.clientsInfoMap[client]
-
-  // console.log('removed client ' + client)
 }
 
 Coordinator.prototype.removeClientFromContentHash = function(contentHash, client){
@@ -90,8 +79,5 @@ Coordinator.prototype.removeClientFromContentHash = function(contentHash, client
 function getRandomInt(start, end) {
   return Math.floor(Math.random() * end) + start
 }
-
-
-
 
 exports.Coordinator = Coordinator
