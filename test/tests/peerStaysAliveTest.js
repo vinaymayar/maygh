@@ -11,8 +11,12 @@ module.exports = new (function() {
       client
         .expect.element('#image2').to.have.attribute('src').after(4000);
       client
-        .pause(10000);
-    }
+        .expect.element('#styles').to.have.attribute('href').after(1000);
+      client
+        .expect.element('#script').to.have.attribute('src').after(1000);
+      client
+        .pause(12000);
+    };
   } else {
     tests['second client loads small image from peer'] = function(client) {
       client
@@ -23,7 +27,7 @@ module.exports = new (function() {
       client
         .expect.element('#image1').to.have.attribute('data-source')
         .which.equals('peer').after(100);
-    }
+    };
 
     tests['second client loads large image from peer'] = function(client) {
       client
@@ -31,11 +35,28 @@ module.exports = new (function() {
       client
         .expect.element('#image2').to.have.attribute('data-source')
         .which.equals('peer').after(100);
-    }
+    };
+
+    tests['second client loads css file from peer'] = function(client)  {
+      client
+        .expect.element('#styles').to.have.attribute('href').after(1000);
+      client
+        .expect.element('#styles').to.have.attribute('data-source')
+        .which.equals('peer').after(100);
+    };
+
+    tests['second client loads js file from peer'] = function(client)  {
+      client
+        .expect.element('#script').to.have.attribute('src').after(1000);
+      client
+        .expect.element('#script').to.have.attribute('data-source')
+        .which.equals('peer').after(100);
+    };
+
   }
 
   tests.after = function(client) {
     client.end();
-  }
+  };
 
 })();

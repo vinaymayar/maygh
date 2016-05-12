@@ -16,7 +16,7 @@ module.exports = new (function() {
           .url('http://localhost:8080/')
           .pause(waitTime)
       }
-    }
+    };
   } else {
     tests['second client loads small image from somewhere'] = function(client) {
       client
@@ -27,7 +27,7 @@ module.exports = new (function() {
       client
         .expect.element('#image1').to.have.attribute('data-source')
         .which.matches(/^server|peer$/).after(100);
-    }
+    };
 
     tests['second client loads large image from somewhere'] = function(client) {
       client
@@ -35,11 +35,28 @@ module.exports = new (function() {
       client
         .expect.element('#image2').to.have.attribute('data-source')
         .which.matches(/^server|peer$/).after(100);
-    }
+    };
+
+    tests['second client loads css file from somewhere'] = function(client)  {
+      client
+        .expect.element('#styles').to.have.attribute('href').after(1000);
+      client
+        .expect.element('#styles').to.have.attribute('data-source')
+        .which.matches(/^server|peer$/).after(100);
+    };
+
+    tests['second client loads js file from somewhere'] = function(client)  {
+      client
+        .expect.element('#script').to.have.attribute('src').after(1000);
+      client
+        .expect.element('#script').to.have.attribute('data-source')
+        .which.matches(/^server|peer$/).after(100);
+    };
+
   }
 
   tests.after = function(client) {
     client.end();
-  }
+  };
 
 })();

@@ -11,7 +11,7 @@ module.exports = new (function() {
       client
         .expect.element('#image1').to.have.attribute('data-source')
         .which.equals('server').after(100);
-    }
+    };
 
     tests['single client loads large image from server'] = function(client) {
       client
@@ -19,12 +19,28 @@ module.exports = new (function() {
       client
         .expect.element('#image2').to.have.attribute('data-source')
         .which.equals('server').after(100);
-    }
+    };
+
+    tests['single client loads css file from server'] = function(client)  {
+      client
+        .expect.element('#styles').to.have.attribute('href').after(1000);
+      client
+        .expect.element('#styles').to.have.attribute('data-source')
+        .which.equals('server').after(100);
+    };
+
+    tests['single client loads js file from server'] = function(client)  {
+      client
+        .expect.element('#script').to.have.attribute('src').after(1000);
+      client
+        .expect.element('#script').to.have.attribute('data-source')
+        .which.equals('server').after(100);
+    };
 
   }
 
   tests.after = function(client) {
     client.end();
-  }
+  };
 
 })();

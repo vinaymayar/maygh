@@ -15,12 +15,18 @@ module.exports = new (function() {
       client
         .expect.element('#image2').to.have.attribute('src').after(4000);
       client
+        .expect.element('#styles').to.have.attribute('href').after(1000);
+      client
+        .expect.element('#script').to.have.attribute('src').after(1000);
+      client
         .execute(function() {
           localStorage.setItem('824e4df3495213386844c0b2d6e781c6dd264697', 'fake-content1')
           localStorage.setItem('119e294567462e13faa0000ab8df22441d91f5f2', 'fake-content2')
+          localStorage.setItem('47e6e46cfaf2c7be43e98f3fafe18cbb6a39e8ac', 'fake-content3')
+          localStorage.setItem('b33145e33f6c2fb410b89cfbb9cf5355c8be15cb', 'fake-content4')
         })
         .pause(10000);
-    }
+    };
   } else {
     tests['second client loads small image from server'] = function(client) {
       client
@@ -31,7 +37,7 @@ module.exports = new (function() {
       client
         .expect.element('#image1').to.have.attribute('data-source')
         .which.equals('server').after(100);
-    }
+    };
 
     tests['second client loads large image from server'] = function(client) {
       client
@@ -39,11 +45,28 @@ module.exports = new (function() {
       client
         .expect.element('#image2').to.have.attribute('data-source')
         .which.equals('server').after(100);
-    }
+    };
+
+    tests['second client loads css file from server'] = function(client)  {
+      client
+        .expect.element('#styles').to.have.attribute('href').after(1000);
+      client
+        .expect.element('#styles').to.have.attribute('data-source')
+        .which.equals('server').after(100);
+    };
+
+    tests['second client loads js file from server'] = function(client)  {
+      client
+        .expect.element('#script').to.have.attribute('src').after(1000);
+      client
+        .expect.element('#script').to.have.attribute('data-source')
+        .which.equals('server').after(100);
+    };
+
   }
 
   tests.after = function(client) {
     client.end();
-  }
+  };
 
 })();
