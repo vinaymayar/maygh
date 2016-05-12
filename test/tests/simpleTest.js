@@ -12,6 +12,15 @@ module.exports = new (function() {
         .expect.element('#image1').to.have.attribute('data-source')
         .which.equals('server').after(100);
     }
+
+    tests['single client loads large image from server'] = function(client) {
+      client
+        .expect.element('#image2').to.have.attribute('src').after(4000);
+      client
+        .expect.element('#image2').to.have.attribute('data-source')
+        .which.equals('server').after(100);
+    }
+
   }
 
   tests.after = function(client) {
