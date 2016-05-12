@@ -9,23 +9,23 @@
 // aware of us.
 //
 
-const LOOKUP_TIMEOUT = 3000
+const LOOKUP_TIMEOUT = 3000;
 
 function Maygh() {
   // socket connecting client to coordinator
-  this.socket = null
+  this.socket = null;
 }
 /**
  * Connects to a coordinator.  The coordinator object
  * passed as an argument is [TODO].
  */
 Maygh.prototype.connect = function() {
-  this.socket = io.connect('http://localhost:8000')
+  this.socket = io.connect('http://localhost:8000');
 
   // on connection to a coordinator, immediately send an 'initiate' event
   this.socket.on('connect', function () {
-    maygh.socket.emit('initiate', {'pid': maygh.socket.id})
-    // console.log("Client " + maygh.socket.id + ' connect')
+    maygh.socket.emit('initiate', {'pid': maygh.socket.id});
+    console.log("Client " + maygh.socket.id + ' connect');
   });
 
   // listens to possible offers from other peers
@@ -33,23 +33,23 @@ Maygh.prototype.connect = function() {
 };
 
 function receiveOfferFromPeer(data, callback) {
-  // console.log("client received offer")
-  var description = data['description']
-  var fromPeer = data['fromPeer']
-  var connectionID = data['connectionID'] // the uniquely identifying connection id
+  console.log("client received offer");
+  var description = data['description'];
+  var fromPeer = data['fromPeer'];
+  var connectionID = data['connectionID']; // the uniquely identifying connection id
 
-  // console.log(description)
-  var pc = createRemotePeerConnection(fromPeer, connectionID) // also sets up all the datachannel, onicecandidate callbacks
+  // also sets up all the datachannel, onicecandidate callbacks
+  var pc = createRemotePeerConnection(fromPeer, connectionID);
 
-  setUpReceiveIceCandidateEventListener(pc, connectionID, 'remote')
-  pc.setRemoteDescription(new RTCSessionDescription(description))
+  setUpReceiveIceCandidateEventListener(pc, connectionID, 'remote');
+  pc.setRemoteDescription(new RTCSessionDescription(description));
 
   pc.createAnswer(
     function(description) {
-      createAnswerSuccess(pc, description, callback)
+      createAnswerSuccess(pc, description, callback);
     },
     function(error) {
-      createAnswerError(error, callback)
+      createAnswerError(error, callback);
     }
   );
 }
@@ -59,23 +59,17 @@ function receiveOfferFromPeer(data, callback) {
  * the element with the given id.
  */
 Maygh.prototype.load = function(contentHash, id, src) {
-  // console.log("called load")
+  console.log("called load");
   var domElt = document.getElementById(id);
 
-  // check if item is already in localstorage
-  // if (localStorage.getItem(contentHash) != null) {
-  //   domElt.src = localStorage.getItem(contentHash);
-  //   return
-  // }
-
-  // otherwise, look up the content w/ coordinator and then save to local storage
+  // look up the content w/ coordinator and then save to local storage
   var lookupTimeout = setTimeout(function() {
-    loadFromSrc(contentHash, src, domElt)
-  }, LOOKUP_TIMEOUT)
+    loadFromSrc(contentHash, src, domElt);
+  }, LOOKUP_TIMEOUT);
 	this.socket.emit('lookup', {'contentHash': contentHash},
     function(data) {
-      clearTimeout(lookupTimeout)
-      loadAndDisplayContent(data, contentHash, src, domElt)
+      clearTimeout(lookupTimeout);
+      loadAndDisplayContent(data, contentHash, src, domElt);
     });
 };
 
@@ -85,30 +79,30 @@ Maygh.prototype.load = function(contentHash, id, src) {
  * If no such peer exists, loads the content from source.
  */
 function loadAndDisplayContent(data, contentHash, src, domElt) {
-  // console.log("lookupSuccessCallback called");
-  // console.log("contentHash is " + contentHash)
+  console.log("lookupSuccessCallback called");
+  console.log("contentHash is " + contentHash);
 
-  var pid = data['pid']
-  var success = data['success']
-  // console.log("success: " + success)
+  var pid = data['pid'];
+  var success = data['success'];
+  console.log("success: " + success);
 
-  if (success) {
-    // console.log("found peer " + pid)
+  if(success) {
+    console.log("found peer " + pid);
 
     // a uniquely identifying sting for a connection
     // used for listening only to specific receiveIceCandidate events
-    var connectionID = generateUID(contentHash)
+    var connectionID = generateUID(contentHash);
 
     // create peerconnection and set up some callbacks
     var pc = createLocalPeerConnection(pid, connectionID, contentHash, verifyAndDisplayContent(domElt, contentHash, src), function() {
-        loadFromSrc(contentHash, src, domElt)
+        loadFromSrc(contentHash, src, domElt);
       },
       function() {
-        return domElt.src
+        return domElt.hasAttribute('data-source');
       })
 
     // sets up the event listener for ice candidate events
-    setUpReceiveIceCandidateEventListener(pc, connectionID, 'local')
+    setUpReceiveIceCandidateEventListener(pc, connectionID, 'local');
 
     // create an offer from that peer connection
     pc.createOffer(
@@ -118,47 +112,48 @@ function loadAndDisplayContent(data, contentHash, src, domElt) {
           'toPeer': pid,
           'fromPeer': maygh.socket.id,
           'connectionID': connectionID,
-        }
+        };
 
         sendOfferToPeer(pc, sendOfferToPeerData, function () {
-          loadFromSrc(contentHash, src, domElt)
-        })
+          loadFromSrc(contentHash, src, domElt);
+        });
       },
       function (error) {
         loadFromSrc(contentHash, src, domElt)
-      })
+      });
 
   } else {
-    loadFromSrc(contentHash, src, domElt)
+    loadFromSrc(contentHash, src, domElt);
   }
 }
 
 function verifyAndDisplayContent(domElt, contentHash, src) {
   return function(content) {
-    if (domElt.src){
-      // console.log('loadFromPeer: content already loaded')
-      return
+    if(domElt.hasAttribute('data-source')) {
+      console.log('loadFromPeer: content already loaded');
+      return;
     }
+
     // verifying content hash first
-    if (verifyContentHash(content, contentHash)) {
-      domElt.src = content
-      domElt.setAttribute('data-source', 'peer')
-      localStorage.setItem(contentHash, content)
+    if(verifyContentHash(content, contentHash)) {
+      setDomEltContent(domElt, content);
+      domElt.setAttribute('data-source', 'peer');
+      localStorage.setItem(contentHash, content);
       maygh.socket.emit('update',
-        {'contentHash': contentHash, 'pid': maygh.socket.id})
-        console.log('loaded content' + contentHash + ' from peer')
+        {'contentHash': contentHash, 'pid': maygh.socket.id});
+      console.log('loaded content' + contentHash + ' from peer');
     } else { // load from src if didn't match
-      // console.log("content hash didn't match. loading from src...")
-      loadFromSrc(contentHash, src, domElt)
+      console.log("content hash didn't match. loading from src...");
+      loadFromSrc(contentHash, src, domElt);
     }
-  }
+  };
 }
 
 /**
  * Returns true if content hash matched, false otherwise.
 */
 function verifyContentHash(content, contentHash) {
-  return contentHash === Sha1.hash(content)
+  return contentHash === Sha1.hash(content);
 }
 
 /**
@@ -166,38 +161,38 @@ function verifyContentHash(content, contentHash) {
 */
 function loadFromSrc(contentHash, src, domElt) {
   // if element is already loaded
-  if (domElt.src){
-    // console.log('loadFromSrc: content already loaded')
-    return
+  if(domElt.hasAttribute('data-source')) {
+    console.log('loadFromSrc: content already loaded');
+    return;
   }
 
-  console.log('loaded content' + contentHash + ' from source')
+  console.log('loaded content' + contentHash + ' from source');
   // Makes a GET request to src and grabs the data
-  var xmlHttp = new XMLHttpRequest()
+  var xmlHttp = new XMLHttpRequest();
   xmlHttp.open( "GET", src, true );
   xmlHttp.responseType = 'arraybuffer';
 
   // Asynchronous request
-  xmlHttp.onreadystatechange = function (e) {
-    if (xmlHttp.readyState == 4 && xmlHttp.status == 200){
-      // console.log("Callback was called... loading from src for contentHash: " + contentHash)
+  xmlHttp.onreadystatechange = function(e) {
+    if(xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+      console.log("Callback was called... loading from src for contentHash: " + contentHash);
 
       var arr = new Uint8Array(this.response);
-      var b64 = encodeBase64(arr)
+      var b64 = encodeBase64(arr);
 
       var mime = getMimeType(src);
       var datauri = 'data:' + mime + ';base64,' + b64;
       localStorage.setItem(contentHash, datauri);
-      domElt.src = datauri
-      domElt.setAttribute('data-source', 'server')
+      setDomEltContent(domElt, datauri);
+      domElt.setAttribute('data-source', 'server');
 
       // sends a update message telling the server, we have the element
       // in out local storage
-      maygh.socket.emit('update', {'contentHash': contentHash, 'pid': maygh.socket.id})
+      maygh.socket.emit('update', {'contentHash': contentHash, 'pid': maygh.socket.id});
     }
   };
 
-  xmlHttp.send(null)
+  xmlHttp.send(null);
 }
 
 /**
@@ -207,16 +202,15 @@ function loadFromSrc(contentHash, src, domElt) {
  */
 function setUpReceiveIceCandidateEventListener(pc, uid, peerType) {
   var eventListenerName = 'receiveIceCandidate-' + peerType + '-' + uid;
-  // console.log('set up eventListenerName in client ' + eventListenerName)
-  maygh.socket.on(eventListenerName, function (data) {
-    var candidate = data['candidate']
+  console.log('set up eventListenerName in client ' + eventListenerName);
+  maygh.socket.on(eventListenerName, function(data) {
+    var candidate = data['candidate'];
     // add the ice candidate that was received to the connection
-    pc.addIceCandidate(new RTCIceCandidate(candidate), function(){}, addIceCandidateError)
-    // console.log("client got an ice candidate from eventListenerName " + eventListenerName)
-    // console.log(pc)
+    pc.addIceCandidate(new RTCIceCandidate(candidate), function(){}, addIceCandidateError);
+    console.log("client got an ice candidate from eventListenerName " + eventListenerName);
+    console.log(pc);
   });
 }
 
 var maygh = new Maygh();
-maygh.connect()
-
+maygh.connect();
