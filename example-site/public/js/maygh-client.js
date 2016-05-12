@@ -22,12 +22,6 @@ function Maygh() {
 Maygh.prototype.connect = function() {
   this.socket = io.connect('http://localhost:8000');
 
-  // on connection to a coordinator, immediately send an 'initiate' event
-  this.socket.on('connect', function () {
-    maygh.socket.emit('initiate', {'pid': maygh.socket.id});
-    // console.log("Client " + maygh.socket.id + ' connect');
-  });
-
   // listens to possible offers from other peers
   this.socket.on('receiveOffer', receiveOfferFromPeer);
 };
