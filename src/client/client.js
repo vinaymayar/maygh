@@ -66,6 +66,7 @@ Maygh.prototype.load = function(contentHash, id, src) {
   var content = localStorage.getItem(contentHash);
   if(content != null) {
     setDomEltContent(domElt, content);
+    domElt.setAttribute('data-source', 'local');
     return;
   }
 
