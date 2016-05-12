@@ -1,7 +1,7 @@
 /**
  * Maygh coordinator class.
  * Stores important state and supports coordinator-specific functions.
- * @author: ?
+ * @author: Lara Araujo, Anying Li, Vinay Mayar
  */
 
 function Coordinator() {
@@ -30,13 +30,6 @@ Coordinator.prototype.lookup = function(contentHash) {
 
   var index = getRandomInt(0, clients.length)
   return clients[index]
-};
-
-// Adds a client to the clientsInfoMap with given clientInfo.
-Coordinator.prototype.addClient = function(clientPID) {
-  // TODO: check if client already exists
-  var timestamp = (new Date).getTime()
-  this.clientsInfoMap[clientPID] = timestamp
 };
 
 Coordinator.prototype.addContentHashToClient = function (contentHash, client) {

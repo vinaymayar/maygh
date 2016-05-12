@@ -36,12 +36,6 @@ setInterval(function() {
 //    'connect': Connects two clients via WebRTC
 io.on('connection', function (socket) {
 
-  socket.on('initiate', function (data) {
-    var clientPID = data['pid']
-    // console.log("client connected " + clientPID)
-    coordinator.addClient(clientPID)
-  });
-
   socket.on('lookup', function (data, callback) {
     // console.log("Server received lookup message")
     var res = {}
