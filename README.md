@@ -69,3 +69,19 @@ To run specific tests, simply pass the test files as arguments to `./run_tests.s
 ```
 ./run_tests.sh tests/deadPeerTest.js
 ```
+
+## Using Maygh in your own site
+First, all the client code (client.js, util.js, util-sha1.js, and util-webrtc.js) need to be imported.
+Then, call maygh.load on all the static content you wish you distribute using Maygh. For example, if you wish to load an image, change the html tag from
+```
+<img id="-id-" src="-src-">
+```
+to
+```
+<img id="-id-">
+<script type="text/javascript">
+maygh.load("-hash-", "-id-", "-src");
+</script>
+```
+where the -hash- is the SHA1 hash of the data URI of that piece of content, -id- is the ID of the DOM element in which this content is to be loaded, and -src- is the source of the content.
+
