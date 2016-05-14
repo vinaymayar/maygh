@@ -8,6 +8,7 @@ The example site uses the Maygh library to load four static resources:
 two images, a script, and a CSS file.  To run the example site,
 
 ```
+export MAYGH_HOME=$PWD
 cd example-site
 npm start
 ```
@@ -19,6 +20,7 @@ server on port 8080.
 To run the coordinator alone, 
 
 ```
+export MAYGH_HOME=$PWD
 cd src/coordinator
 npm start
 ```
@@ -26,6 +28,7 @@ npm start
 To run the example site web server without the coordinator,
 
 ```
+export MAYGH_HOME=$PWD
 cd example-site
 node server
 ```
